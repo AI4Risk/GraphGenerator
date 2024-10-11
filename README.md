@@ -59,18 +59,18 @@ The repository is organized as follows:
 - `eval`: evaluation tools.
 - `methods/`: implementations of models.
 - `config/`: configuration files for different models.
-- `models/`: the pre-trained models for each method. The readers could either train the models by themselves or directly use our pre-trained models.
+- `models/`: the checkpoints for each method.
 - `data/`: dataset files.
 - `requirements.txt`: package dependencies.
 
 ## Requirements
 
 ```
-torch			2.3.1+cu121
-networkx		2.8
-scipy			1.14.1
-scikit-learn	1.5.2
-numpy			1.26.4
+torch           2.3.1+cu121
+networkx        2.8
+scipy           1.14.1
+scikit-learn    1.5.2
+numpy           1.26.4
 ```
 
 
