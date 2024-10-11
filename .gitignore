@@ -164,3 +164,7 @@ test.ipynb
 test.py
 test/
 log/
+
+# data
+*.npz
+*.bin
