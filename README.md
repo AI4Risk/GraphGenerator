@@ -55,13 +55,16 @@ The repository is organized as follows:
 
 - `main.py`: organize all models.
 - `preprocess.py`: preprocess data into a sparse matrix.
+- `eval.py`: evaluation.
+- `eval_tools/`: functions designed to evaluate and analyze various statistical properties of graphs.
 - `util.py`: utilities.
-- `eval`: evaluation tools.
 - `methods/`: implementations of models.
 - `config/`: configuration files for different models.
-- `models/`: the checkpoints for each method.
+- `models/`: the checkpoints or the trained models for each method.
 - `data/`: dataset files.
 - `requirements.txt`: package dependencies.
+
+
 
 ## Requirements
 
