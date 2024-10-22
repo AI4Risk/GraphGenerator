@@ -164,6 +164,8 @@ test.ipynb
 test.py
 test/
 log/
+graphs/
+*.ckpt
 
 # data
 *.npz

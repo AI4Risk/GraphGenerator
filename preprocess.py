@@ -114,8 +114,7 @@ def preprocess_ind(dataset = 'cora'):
     features = features.tocsr()
 
     G = nx.from_dict_of_lists(graph)
-    adj = nx.adjacency_matrix(G)
-    
+    adj = nx.to_scipy_sparse_array(G, format='csr')
     # save csr matrix to npz file
     sp.save_npz(path_graph_csr, adj)
     sp.save_npz(path_features, features)

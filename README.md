@@ -4,7 +4,7 @@ Awesome Deep Graph Generator
 
 Source codes implementation of papers:
 
-- 
+- `GraphRNN`: GraphRNN: Generating Realistic Graphs with Deep Auto-regressive Models, in ICML 2018.
 
 
 
@@ -13,16 +13,26 @@ Source codes implementation of papers:
 ### Data processing
 
 1. Run `python preprocess.py` to process a graph into a sparse matrix and save the matrix as an `.npz` file.
-
 2. You can run `python eval.py` to review the information about the datasets.
 
+
+
 ### Training
+
+To test implementations of `GraphRNN` and `GraphRNN-S`, run
+
+```
+python main.py --method GraphRNN
+python main.py --method GraphRNN-S
+```
+
+Configuration files can be found in `config/GraphRNN.yaml`.
 
 
 
 ### Evalutaion
 
-
+TODO.
 
 ### Data Description
 
@@ -90,9 +100,12 @@ numpy           1.26.4
 If you find *GraphGenerator* is useful for your research, please consider citing the following papers:
 
 ```
-
+@InProceedings{pmlr-v80-you18a,
+  title={GraphRNN: Generating Realistic Graphs with Deep Auto-regressive Models},
+  author={You, Jiaxuan and Ying, Rex and Ren, Xiang and Hamilton, William and Leskovec, Jure},
+  booktitle={Proceedings of the 35th International Conference on Machine Learning},
+  year={2018}
+}
 ```
 
 
-
-### References
