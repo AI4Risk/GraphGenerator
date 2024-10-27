@@ -216,8 +216,8 @@ def test_rnn_epoch(epoch, args, rnn, output, test_batch_size=16):
 def train(args, dataset_train, rnn, output):
     
     # initialize optimizer
-    optimizer_rnn = optim.Adam(list(rnn.parameters()), lr=args['lr'])
-    optimizer_output = optim.Adam(list(output.parameters()), lr=args['lr'])
+    optimizer_rnn = optim.AdamW(rnn.parameters(), lr=args['lr'], weight_decay=args['weight_decay'])
+    optimizer_output = optim.AdamW(output.parameters(), lr=args['lr'], weight_decay=args['weight_decay'])
 
     scheduler_rnn = MultiStepLR(optimizer_rnn, milestones=args['milestones'], gamma=args['lr_rate'])
     scheduler_output = MultiStepLR(optimizer_output, milestones=args['milestones'], gamma=args['lr_rate'])

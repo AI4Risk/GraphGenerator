@@ -17,19 +17,20 @@ embedding_size_output: 64 # the embedding size for output (VAE/MLP)
 
 batch_size: 32 # normal: 32, and the rest should be changed accordingly
 test_batch_size: 32
-test_total_size: 1000
+test_total_size: 300
 num_layers: 4
 
 ### training config
 num_workers: 4 # num workers to load data, default 4
 batch_ratio: 32 # how many batches of samples per epoch, default 32, e.g., 1 epoch: 32 batches
-epochs: 1000 # now one epoch means batch_ratio x batch_size
+epochs: 500 # now one epoch means batch_ratio x batch_size
 epochs_graph: 100 # start to save graph
 epochs_log: 50  # save log every epochs_log
 epochs_ckpt: 50 # save ckpt every epochs_ckpt
 
 lr: 0.003
-milestones: [400, 700]
+weight_decay: 0.01
+milestones: [200, 400]
 lr_rate: 0.3
 
 sample_time: 2 # sample time in each time step, when validating

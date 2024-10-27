@@ -1,17 +1,22 @@
 # Original project: https://github.com/JiaxuanYou/graph-generation
+import sys
+import os
+sys.path.append(os.path.dirname(__file__))
+
 import concurrent.futures
 from datetime import datetime
 from functools import partial
 import numpy as np
 import networkx as nx
-import os
+
 import pickle as pkl
 import subprocess as sp
 import time
 
-import eval_tools.mmd as mmd
+import mmd
 
 PRINT_TIME = False
+
 
 def degree_worker(G):
     return np.array(nx.degree_histogram(G))
@@ -50,7 +55,7 @@ def degree_stats(graph_ref_list, graph_pred_list, is_parallel=False):
         for i in range(len(graph_pred_list_remove_empty)):
             degree_temp = np.array(nx.degree_histogram(graph_pred_list_remove_empty[i]))
             sample_pred.append(degree_temp)
-    print('sample_ref_len:',len(sample_ref),'sample_pred_len:', len(sample_pred))
+    
     mmd_dist = mmd.compute_mmd(sample_ref, sample_pred, kernel=mmd.gaussian_emd)
     elapsed = datetime.now() - prev
     if PRINT_TIME:
@@ -125,14 +130,16 @@ def edge_list_reindexed(G):
     return edges
 
 def orca(graph):
-    tmp_fname = 'eval/orca/tmp.txt'
+    tmp_fname = os.path.join(os.path.dirname(__file__), 'orca/tmp.txt')
     f = open(tmp_fname, 'w')
     f.write(str(graph.number_of_nodes()) + ' ' + str(graph.number_of_edges()) + '\n')
     for (u, v) in edge_list_reindexed(graph):
         f.write(str(u) + ' ' + str(v) + '\n')
     f.close()
+    
+    orca_path = os.path.join(os.path.dirname(__file__), 'orca/orca')
 
-    output = sp.check_output(['./eval/orca/orca', 'node', '4', 'eval/orca/tmp.txt', 'std'])
+    output = sp.check_output([orca_path, 'node', '4', tmp_fname, 'std'])
     output = output.decode('utf8').strip()
     
     idx = output.find(COUNT_START_STR) + len(COUNT_START_STR)
@@ -159,9 +166,10 @@ def motif_stats(graph_ref_list, graph_pred_list, motif_type='4cycle', ground_tru
 
     graph_pred_list_remove_empty = [G for G in graph_pred_list if not G.number_of_nodes() == 0]
     indices = motif_to_indices[motif_type]
+    
     for G in graph_ref_list:
         orbit_counts = orca(G)
-        motif_counts = np.sum(orbit_counts[:, indices], axis=1)
+        motif_counts = np.sum(orbit_counts[:, indices], axis=1,keepdims=True)
 
         if ground_truth_match is not None:
             match_cnt = 0
@@ -172,12 +180,13 @@ def motif_stats(graph_ref_list, graph_pred_list, motif_type='4cycle', ground_tru
 
         #hist, _ = np.histogram(
         #        motif_counts, bins=bins, density=False)
-        motif_temp = np.sum(motif_counts) / G.number_of_nodes()
+        motif_temp = np.sum(motif_counts, axis=0) / G.number_of_nodes()
         total_counts_ref.append(motif_temp)
+
 
     for G in graph_pred_list_remove_empty:
         orbit_counts = orca(G)
-        motif_counts = np.sum(orbit_counts[:, indices], axis=1)
+        motif_counts = np.sum(orbit_counts[:, indices], axis=1,keepdims=True)
 
         if ground_truth_match is not None:
             match_cnt = 0
@@ -186,9 +195,11 @@ def motif_stats(graph_ref_list, graph_pred_list, motif_type='4cycle', ground_tru
                     match_cnt += 1
             num_matches_pred.append(match_cnt / G.number_of_nodes())
 
-        motif_temp = np.sum(motif_counts) / G.number_of_nodes()
+        motif_temp = np.sum(motif_counts, axis=0) / G.number_of_nodes()
         total_counts_pred.append(motif_temp)
-
+    total_counts_ref = np.array(total_counts_ref)
+    total_counts_pred = np.array(total_counts_pred)
+    
     mmd_dist = mmd.compute_mmd(total_counts_ref, total_counts_pred, kernel=mmd.gaussian,
             is_hist=False)
     #print('-------------------------')
@@ -222,6 +233,7 @@ def orbit_stats_all(graph_ref_list, graph_pred_list):
 
     total_counts_ref = np.array(total_counts_ref)
     total_counts_pred = np.array(total_counts_pred)
+    
     mmd_dist = mmd.compute_mmd(total_counts_ref, total_counts_pred, kernel=mmd.gaussian,
             is_hist=False, sigma=30.0)
 

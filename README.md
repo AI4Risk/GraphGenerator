@@ -12,8 +12,8 @@ Source codes implementation of papers:
 
 ### Data processing
 
-1. Run `python preprocess.py` to process a graph into a sparse matrix and save the matrix as an `.npz` file.
-2. You can run `python eval.py` to review the information about the datasets.
+1. Run `python experiment/preprocess.py` to process a graph into a sparse matrix and save the matrix as an `.npz` file.
+2. You can run `python experiment/eval.py` to review the information about the datasets.
 
 
 
@@ -57,17 +57,14 @@ $d_{mean}$: mean degree.
 
 The performance of models tested on datasets are listed as follows:
 
-
+TODO.
 
 ## Repo Structure
 
 The repository is organized as follows:
 
 - `main.py`: organize all models.
-- `preprocess.py`: preprocess data into a sparse matrix.
-- `eval.py`: evaluation.
-- `eval_tools/`: functions designed to evaluate and analyze various statistical properties of graphs.
-- `util.py`: utilities.
+- `experiment/`: preprocessing and evaluation.
 - `methods/`: implementations of models.
 - `config/`: configuration files for different models.
 - `models/`: the checkpoints or the trained models for each method.
@@ -107,5 +104,3 @@ If you find *GraphGenerator* is useful for your research, please consider citing
   year={2018}
 }
 ```
-
-

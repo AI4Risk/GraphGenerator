@@ -46,10 +46,12 @@ def main_GraphRNN(graph, args):
     log('max/min number edge: {}; {}'.format(max_num_edge,min_num_edge))
     log('max previous node: {}'.format(args['max_prev_node']))
 
-    #  TODO: save ground truth graphs
-    ## To get train and test set, after loading you need to manually slice
-    # save_graph_list(graphs, args['graph_save_path'] + '0.dat')
-    # save_graph_list(graphs, args['graph_save_path'] + '0.dat')
+    #  save ground truth graphs
+    for graph in graphs_test:
+        self_loops = list(nx.selfloop_edges(graph))
+        graph.remove_edges_from(self_loops)
+    fname = os.path.join(args['graph_save_path'], '{}_test.bin'.format(args['method']))
+    save_graph_list(graphs_test, fname)
 
     
     dataset = Graph_sequence_sampler_pytorch(graphs_train,max_prev_node=args['max_prev_node'],max_num_node=args['max_num_node'])

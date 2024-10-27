@@ -1,1 +1,0 @@
-Original project: https://github.com/JiaxuanYou/graph-generation

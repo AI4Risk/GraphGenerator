@@ -5,10 +5,12 @@ import scipy.sparse as sp
 from itertools import count
 import pickle as pkl
 import os
+from os.path import join
 
 ########## csv file ##########
+data_path = join(os.path.dirname(__file__), '..', 'data')
 path_csv_file = {
-    'google': 'data/google/web-Google.txt',
+    'google': join(data_path, 'google/web-Google.txt'),
 }
 
 def reorder_index(src: list, tgt: list) -> tuple:
@@ -56,8 +58,8 @@ def preprocess_csv(file_name):
     """
     Preprocess the csv file.
     """
-    
-    path_npz = os.path.join('data', file_name, f'{file_name}_graph_csr.npz')
+    path_prefix = os.path.join(os.path.dirname(__file__), '..','data', file_name)
+    path_npz = os.path.join(path_prefix, f'{file_name}_graph_csr.npz')
     if os.path.exists(path_npz):
         print(f'{file_name} has been preprocessed.')
         return
@@ -81,7 +83,8 @@ def preprocess_ind(dataset = 'cora'):
     save the graph and features as sparse matrix.
     """
     
-    path_prefix = os.path.join('data', dataset)
+    path_prefix = os.path.join(os.path.dirname(__file__), '..','data', dataset)
+    path_prefix = os.path.abspath(path_prefix)
     path_graph_csr = os.path.join(path_prefix, '{}_graph_csr.npz'.format(dataset))
     path_features = os.path.join(path_prefix, '{}_features.npz'.format(dataset))
     

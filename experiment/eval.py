@@ -1,5 +1,7 @@
 import scipy.sparse as sp
 from eval_tools.stats1graph import *
+import os
+from os.path import join, abspath
 
 def compute_graph_statistics(A):
     """
@@ -47,13 +49,16 @@ def compute_graph_statistics(A):
 
 
 if __name__ == '__main__':
+    
+    prefix = abspath(join(os.path.dirname(__file__), '..', 'data'))
+
     dic = {
-        'google': 'data/google/google_graph_csr.npz',
-        'citeseer': 'data/citeseer/citeseer_graph_csr.npz',
-        'cora': 'data/cora/cora_graph_csr.npz',
-        'pubmed': 'data/pubmed/pubmed_graph_csr.npz'
+        'google': join(prefix, 'google/google_graph_csr.npz'),
+        'citeseer': join(prefix, 'citeseer/citeseer_graph_csr.npz'),
+        'cora': join(prefix, 'cora/cora_graph_csr.npz'),
+        'pubmed': join(prefix, 'pubmed/pubmed_graph_csr.npz'),
     }
-    print('Computing graph statistics..., note that the graphs are undirected.')
+    print('Computing graph statistics..., note that the graphs are undirected.\n')
     for dataset, path in dic.items():
         A = sp.load_npz(path)
         statistics = compute_graph_statistics(A)
