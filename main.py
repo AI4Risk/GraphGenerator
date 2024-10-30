@@ -28,7 +28,7 @@ def parse_args():
     
     args = {
         'method': method,
-        'data_path': abspath(join('data', data, f'{data}_graph_csr.npz')),
+        'data_path': abspath(join('data', data, f'{data}_undirected_csr.npz')),
         'graph_save_path': abspath(join('graphs', data)),
         'checkpoint_path': abspath(join('models', '{}_{}.ckpt'.format(data, method))),
     }

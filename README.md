@@ -40,10 +40,10 @@ The following datasets are from [linqs](https://linqs.org/datasets/) and [snap](
 
 | Data     | #Nodes | #Edges  | $d_{mean}$ | GINI  | PWE   |
 | -------- | ------ | ------- | ---------- | ----- | ----- |
-| Google   | 875713 | 4322051 | 9.871      | 0.587 | 1.617 |
 | Citeseer | 3327   | 4732    | 2.774      | 0.435 | 2.420 |
 | Cora     | 2708   | 5429    | 3.898      | 0.405 | 1.932 |
 | Pubmed   | 19717  | 44338   | 4.496      | 0.604 | 2.176 |
+| Google   | 875713 | 4322051 | 9.871      | 0.587 | 1.617 |
 
 $d_{mean}$: mean degree.
 

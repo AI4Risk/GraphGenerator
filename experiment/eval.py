@@ -3,7 +3,7 @@ from eval_tools.stats1graph import *
 import os
 from os.path import join, abspath
 
-def compute_graph_statistics(A):
+def compute_graph_statistics(A, A_dir=None):
     """
     Compute a selection of graph statistics for the input graph.
     
@@ -25,9 +25,15 @@ def compute_graph_statistics(A):
                  * Clustering coefficient
                  * Characteristic path length
     """
+    
+    if A_dir is None:
+        num_edges = A.nnz // 2
+    else:
+        num_edges = A_dir.nnz
+        
     statistics = {
         'n_nodes': A.shape[0],
-        'n_edges': A.nnz,
+        'n_edges': num_edges,
         "d_max": max_degree(A),
         "d_min": min_degree(A),
         "d_mean": average_degree(A),
@@ -52,16 +58,26 @@ if __name__ == '__main__':
     
     prefix = abspath(join(os.path.dirname(__file__), '..', 'data'))
 
-    dic = {
-        'google': join(prefix, 'google/google_graph_csr.npz'),
-        'citeseer': join(prefix, 'citeseer/citeseer_graph_csr.npz'),
-        'cora': join(prefix, 'cora/cora_graph_csr.npz'),
-        'pubmed': join(prefix, 'pubmed/pubmed_graph_csr.npz'),
+    undirected = {
+        'citeseer': join(prefix, 'citeseer/citeseer_undirected_csr.npz'),
+        'cora': join(prefix, 'cora/cora_undirected_csr.npz'),
+        'pubmed': join(prefix, 'pubmed/pubmed_undirected_csr.npz'),
+        'google': join(prefix, 'google/google_undirected_csr.npz'),
     }
+    
+    directed = {
+        'citeseer': join(prefix, 'citeseer/citeseer_directed_csr.npz'),
+        'cora': join(prefix, 'cora/cora_directed_csr.npz'),
+        'pubmed': join(prefix, 'pubmed/pubmed_directed_csr.npz'),
+    }
+ 
     print('Computing graph statistics..., note that the graphs are undirected.\n')
-    for dataset, path in dic.items():
+    for dataset, path in undirected.items():
         A = sp.load_npz(path)
-        statistics = compute_graph_statistics(A)
+        A_dir = None
+        if dataset in directed:
+            A_dir = sp.load_npz(directed[dataset])
+        statistics = compute_graph_statistics(A, A_dir)
         
         print(f'{dataset}: {statistics}')
     
