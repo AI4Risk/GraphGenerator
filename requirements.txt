@@ -3,3 +3,6 @@ networkx==2.8
 scipy==1.14.1
 scikit-learn==1.5.2
 numpy==1.26.4
+community==1.0.0b1
+python-louvain==0.16
+dgl==2.4.0+cu121

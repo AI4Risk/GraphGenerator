@@ -2,6 +2,7 @@ import scipy.sparse as sp
 from eval_tools.stats1graph import *
 import os
 from os.path import join, abspath
+import json
 
 def compute_graph_statistics(A, A_dir=None):
     """
@@ -39,18 +40,19 @@ def compute_graph_statistics(A, A_dir=None):
         "d_mean": average_degree(A),
         "gini": gini(A),
         "power_law_exp": power_law_alpha(A),
-        # "LCC": LCC(A),
+        "LCC": LCC(A),
         "wedge_count": wedge_count(A),
         "claw_count": claw_count(A),
         # "triangle_count": triangle_count(A),
         # "square_count": square_count(A),
         # "rel_edge_distr_entropy": edge_distribution_entropy(A),
         # "assortativity": assortativity(A),
-        # "clustering_coefficient": clustering_coefficient(A),
+        "clustering_coefficient": clustering_coefficient(A),
         # "n_component": n_component(A),
         # "cpl": cpl(A),  # 性能原因
     }
     
+    statistics = {k: int(v) if isinstance(v, int) else round(float(v), 4) for k, v in statistics.items()}
     return statistics
 
 
@@ -71,13 +73,15 @@ if __name__ == '__main__':
         'pubmed': join(prefix, 'pubmed/pubmed_directed_csr.npz'),
     }
  
-    print('Computing graph statistics..., note that the graphs are undirected.\n')
+    print('Computing graph statistics..., note that the graphs are undirected.')
     for dataset, path in undirected.items():
         A = sp.load_npz(path)
         A_dir = None
         if dataset in directed:
             A_dir = sp.load_npz(directed[dataset])
+        
+        print('\nComputing statistics for', dataset)
         statistics = compute_graph_statistics(A, A_dir)
         
-        print(f'{dataset}: {statistics}')
+        print(f'{dataset}: {json.dumps(statistics, indent=4)}')
     

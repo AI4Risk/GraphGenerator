@@ -10,9 +10,9 @@ from .train import *
 import yaml
 
 
-def main_GraphRNN(graph, args):
+def main_GraphRNN(A, args):
     # All necessary arguments are defined in args.py
-    graphs = split_graph(graph, args)
+    graphs = split_graph(A, args)
     
     # split datasets
     random.seed(123)

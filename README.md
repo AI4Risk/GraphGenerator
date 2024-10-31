@@ -5,6 +5,7 @@ Awesome Deep Graph Generator
 Source codes implementation of papers:
 
 - `GraphRNN`: GraphRNN: Generating Realistic Graphs with Deep Auto-regressive Models, in ICML 2018.
+- `CPGAE`: Efficient Learning-based Community-Preserving Graph Generation, in ICDE 2022. (GAE version of CPGAN)
 
 
 
@@ -19,20 +20,21 @@ Source codes implementation of papers:
 
 ### Training
 
-To test implementations of `GraphRNN` and `GraphRNN-S`, run
+To test implementations of the methods, run
 
 ```
 python main.py --method GraphRNN
 python main.py --method GraphRNN-S
+python main.py --method CPGAE
 ```
 
-Configuration files can be found in `config/GraphRNN.yaml`.
+Configuration files can be found in `config/`.
 
 
 
 ### Evalutaion
 
-TODO.
+The evaluation tools are found in `experiment/eval_tools`. Utilize the functions within `stats1graph.py` for graph statistics and those in `stats2graphs.py` for calculating MMD between ground truth and generated graphs.
 
 ### Data Description
 
@@ -81,6 +83,9 @@ networkx        2.8
 scipy           1.14.1
 scikit-learn    1.5.2
 numpy           1.26.4
+community       1.0.0b1
+python-louvain  0.16
+dgl             2.4.0+cu121
 ```
 
 
@@ -102,5 +107,14 @@ If you find *GraphGenerator* is useful for your research, please consider citing
   author={You, Jiaxuan and Ying, Rex and Ren, Xiang and Hamilton, William and Leskovec, Jure},
   booktitle={Proceedings of the 35th International Conference on Machine Learning},
   year={2018}
+}
+
+@inproceedings{xiang2022efficient,
+  title={Efficient learning-based community-preserving graph generation},
+  author={Xiang, Sheng and Cheng, Dawei and Zhang, Jianfu and Ma, Zhenwei and Wang, Xiaoyang and Zhang, Ying},
+  booktitle={2022 IEEE 38th International Conference on Data Engineering (ICDE)},
+  pages={1982--1994},
+  year={2022},
+  organization={IEEE}
 }
 ```

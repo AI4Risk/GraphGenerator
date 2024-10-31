@@ -17,7 +17,8 @@ def parse_args():
 
     if method == 'GraphRNN' or method == 'GraphRNN-S':
         yaml_file = "config/GraphRNN.yaml"
-        
+    elif method == 'CPGAE':
+        yaml_file = "config/CPGAE.yaml"
     else:
         raise NotImplementedError("Unsupported method.")
 
@@ -55,6 +56,9 @@ def main(args):
     if args['method'] in ['GraphRNN', 'GraphRNN-S']:    
         from methods.GraphRNN.main_GraphRNN import main_GraphRNN
         main_GraphRNN(graph, args)
+    elif args['method'] == 'CPGAE':
+        from methods.CPGAE.main_CPGAE import main_CPGAE
+        main_CPGAE(graph, args)
 
 
 ########## log settings ##########

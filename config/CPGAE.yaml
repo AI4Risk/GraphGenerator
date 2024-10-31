@@ -1,0 +1,15 @@
+data: 'cora'
+hidden_dim: 256
+epochs: 500
+num_heads: 8 # heads of the GAT
+
+eo_limit: 0.99 # Edge overlap limit
+ep_limit: 30 # Max epochs for eo ascending, then stop
+seed: 50 # Random seed
+
+device: 'cuda:0'
+lr: !!float 0.0003
+weight_decay: !!float 1e-6
+batch_size: 32
+
+resume: false

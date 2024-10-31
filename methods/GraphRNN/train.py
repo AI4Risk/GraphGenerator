@@ -224,9 +224,10 @@ def train(args, dataset_train, rnn, output):
 
     # start main loop
     loss_min = 99999999
-    resume = args['resume']
-    if resume['need']:
-        ckpt = torch.load(resume['ckpt_path'])
+    
+    if args['resume']:
+        log('Resuming from checkpoint...')
+        ckpt = torch.load(args['checkpoint_path'])
         rnn.load_state_dict(ckpt['rnn'])
         output.load_state_dict(ckpt['output'])
         optimizer_rnn.load_state_dict(ckpt['optimizer_rnn'])
@@ -234,6 +235,7 @@ def train(args, dataset_train, rnn, output):
         scheduler_rnn.load_state_dict(ckpt['scheduler_rnn'])
         scheduler_output.load_state_dict(ckpt['scheduler_output'])
         epoch_begin = ckpt['epoch']
+        log('Resumed from epoch {}'.format(epoch_begin))
     else:
         epoch_begin = 0
         
@@ -277,7 +279,7 @@ def train(args, dataset_train, rnn, output):
                 G_pred.extend(G_pred_step)
             
             # save graphs
-            fname = os.path.join(args['graph_save_path'], '{}_loss{}.bin'.format(args['method'], loss_min))
+            fname = os.path.join(args['graph_save_path'], '{}_loss{:.4f}.bin'.format(args['method'], loss_min))
             save_graph_list(G_pred, fname)
             
             log('test done, graphs saved')

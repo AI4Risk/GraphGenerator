@@ -35,6 +35,4 @@ lr_rate: 0.3
 
 sample_time: 2 # sample time in each time step, when validating
 
-resume:
-  need: false
-  ckpt_path: ''
+resume: false
