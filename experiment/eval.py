@@ -64,6 +64,7 @@ if __name__ == '__main__':
         'citeseer': join(prefix, 'citeseer/citeseer_undirected_csr.npz'),
         'cora': join(prefix, 'cora/cora_undirected_csr.npz'),
         'pubmed': join(prefix, 'pubmed/pubmed_undirected_csr.npz'),
+        'Epinions': join(prefix, 'Epinions/Epinions_undirected_csr.npz'),
         'google': join(prefix, 'google/google_undirected_csr.npz'),
     }
     
@@ -71,6 +72,8 @@ if __name__ == '__main__':
         'citeseer': join(prefix, 'citeseer/citeseer_directed_csr.npz'),
         'cora': join(prefix, 'cora/cora_directed_csr.npz'),
         'pubmed': join(prefix, 'pubmed/pubmed_directed_csr.npz'),
+        'Epinions': join(prefix, 'Epinions/Epinions_directed_csr.npz'),
+        'google': join(prefix, 'google/google_directed_csr.npz'),
     }
  
     print('Computing graph statistics..., note that the graphs are undirected.')

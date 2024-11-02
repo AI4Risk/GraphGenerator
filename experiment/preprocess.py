@@ -8,12 +8,14 @@ import re
 import os
 from os import path
 from os.path import join
+import zipfile
 
 ########## csv file ##########
 DATA_PATH = join(path.dirname(__file__), '..', 'data')
 DATA_FILE_PATH = {
     'citeseer': join(DATA_PATH, 'citeseer/citeseer.cites'),
     'cora': join(DATA_PATH, 'cora/cora.cites'),
+    'Epinions': join(DATA_PATH, 'Epinions/soc-Epinions1.txt'),
     'google': join(DATA_PATH, 'google/web-Google.txt'),
 }
 
@@ -86,7 +88,7 @@ def preprocess_csv(file_name):
     Preprocess the csv file.
     """
     # file path
-    path_prefix = path.join(path.dirname(__file__), '..','data', file_name)
+    path_prefix = path.join(DATA_PATH, file_name)
     directed_path = path.join(path_prefix, f'{file_name}_directed_csr.npz')
     undirected_path = path.join(path_prefix, f'{file_name}_undirected_csr.npz')
     features_path = None
@@ -126,7 +128,7 @@ def preprocess_pubmed():
     Preprocess the pubmed dataset.
     """
     # file path
-    path_prefix = path.join(path.dirname(__file__), '..','data', 'pubmed')
+    path_prefix = path.join(DATA_PATH, 'pubmed')
     directed_path = path.join(path_prefix, 'pubmed_directed_csr.npz')
     undirected_path = path.join(path_prefix, 'pubmed_undirected_csr.npz')
     features_path = path.join(path_prefix, 'pubmed_features.npz')
@@ -136,7 +138,7 @@ def preprocess_pubmed():
         return
     
     # preprocess the structure
-    data_file = join(DATA_PATH, 'pubmed/data/Pubmed-Diabetes.DIRECTED.cites.tab')
+    data_file = join(path_prefix, 'Pubmed-Diabetes.DIRECTED.cites.tab')
     with open(data_file, 'r') as f:
         lines = f.readlines()
         lines = lines[2:] # skip the first two lines, which are comments
@@ -158,7 +160,7 @@ def preprocess_pubmed():
     sp.save_npz(undirected_path, nx.to_scipy_sparse_array(G.to_undirected(), format='csr'))
     
     # preprocess the features
-    features_file = join(DATA_PATH, 'pubmed/data/Pubmed-Diabetes.NODE.paper.tab')
+    features_file = join(path_prefix, 'Pubmed-Diabetes.NODE.paper.tab')
     with open(features_file, 'r') as f:
         lines = f.readlines()
         cat = re.findall(r'w-\w+', lines[1])
@@ -181,7 +183,24 @@ def preprocess_pubmed():
     sp.save_npz(features_path, feat.tocsr())
     
 
+########## extract all zip files ##########
+def extract_all_zip_files():
+    """
+    Extract all zip files in the data directory.
+    """
+    dir_names = os.listdir(DATA_PATH)
+    
+    for dir_name in dir_names:
+        dir_path = path.join(DATA_PATH, dir_name)
+        zip_file = path.join(dir_path, 'data.zip')
+        with zipfile.ZipFile(zip_file, 'r') as z:
+            z.extractall(dir_path)
+            
+
 if __name__ == '__main__':
+    # extract all zip files
+    extract_all_zip_files()
+    
     # csv file
     for file_name in DATA_FILE_PATH.keys():
         print(f'Preprocessing {file_name}...')

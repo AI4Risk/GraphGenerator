@@ -170,3 +170,8 @@ graphs/
 # data
 *.npz
 *.bin
+data/*/*.cites
+data/*/*.content
+data/*/*.txt
+data/*/*.tab
+data/*/*.mat
