@@ -40,14 +40,14 @@ def compute_graph_statistics(A, A_dir=None):
         "d_mean": average_degree(A),
         "gini": gini(A),
         "power_law_exp": power_law_alpha(A),
-        "LCC": LCC(A),
+        # "LCC": LCC(A),
         "wedge_count": wedge_count(A),
         "claw_count": claw_count(A),
         # "triangle_count": triangle_count(A),
         # "square_count": square_count(A),
         # "rel_edge_distr_entropy": edge_distribution_entropy(A),
         # "assortativity": assortativity(A),
-        "clustering_coefficient": clustering_coefficient(A),
+        # "clustering_coefficient": clustering_coefficient(A),
         # "n_component": n_component(A),
         # "cpl": cpl(A),  # 性能原因
     }
@@ -60,31 +60,21 @@ if __name__ == '__main__':
     
     prefix = abspath(join(os.path.dirname(__file__), '..', 'data'))
 
-    undirected = {
-        'citeseer': join(prefix, 'citeseer/citeseer_undirected_csr.npz'),
-        'cora': join(prefix, 'cora/cora_undirected_csr.npz'),
-        'pubmed': join(prefix, 'pubmed/pubmed_undirected_csr.npz'),
-        'Epinions': join(prefix, 'Epinions/Epinions_undirected_csr.npz'),
-        'google': join(prefix, 'google/google_undirected_csr.npz'),
-    }
+    datasets = ['citeseer', 'cora', 'pubmed', 'Epinions', 'google', 'YelpChi']
     
-    directed = {
-        'citeseer': join(prefix, 'citeseer/citeseer_directed_csr.npz'),
-        'cora': join(prefix, 'cora/cora_directed_csr.npz'),
-        'pubmed': join(prefix, 'pubmed/pubmed_directed_csr.npz'),
-        'Epinions': join(prefix, 'Epinions/Epinions_directed_csr.npz'),
-        'google': join(prefix, 'google/google_directed_csr.npz'),
-    }
- 
     print('Computing graph statistics..., note that the graphs are undirected.')
-    for dataset, path in undirected.items():
-        A = sp.load_npz(path)
+    for dataset in datasets:
+        data_dir = join(prefix, dataset)
+        
+        undirected_path = join(data_dir, f'{dataset}_undirected_csr.npz')
+        directed_path = join(data_dir, f'{dataset}_directed_csr.npz')
+        
+        A = sp.load_npz(undirected_path)
         A_dir = None
-        if dataset in directed:
-            A_dir = sp.load_npz(directed[dataset])
+        if os.path.exists(directed_path):
+            A_dir = sp.load_npz(directed_path)
         
         print('\nComputing statistics for', dataset)
         statistics = compute_graph_statistics(A, A_dir)
         
         print(f'{dataset}: {json.dumps(statistics, indent=4)}')
-    

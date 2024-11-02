@@ -1,7 +1,7 @@
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 import yaml
 import json
-from os.path import join, abspath
+from os.path import join, abspath, dirname
 import os
 import scipy.sparse as sp
 import logging
@@ -9,6 +9,11 @@ from datetime import datetime
 
 
 ########## main ##########
+def case_insensitive(data):
+    dir_names = os.listdir(join(dirname(__file__), 'data'))
+    data = next(name for name in dir_names if data.lower() == name.lower()) # case insensitive
+    return data
+    
 def parse_args():
     parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter,
                             conflict_handler='resolve')
@@ -25,6 +30,7 @@ def parse_args():
     with open(yaml_file) as file:
         config = yaml.safe_load(file)
     
+    config['data'] = case_insensitive(config['data'])
     data = config['data']
     
     args = {

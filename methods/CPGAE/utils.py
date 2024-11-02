@@ -30,8 +30,7 @@ def edge_overlap(A, B):
     Returns:
         Edge overlap.
     """
-
-    return A.multiply(B).sum() / 2
+    return A.multiply(B).sum() / A.sum()
 
 def random_seed(seed=42):
     torch.manual_seed(seed)
@@ -47,3 +46,11 @@ def log(msg):
     import logging
     logging.info(msg)
     print(msg)
+    
+def logPeakGPUMem(device):
+    max_allocated = torch.cuda.max_memory_allocated(device=device)
+    max_reserved = torch.cuda.max_memory_reserved(device=device)
+    
+    log(f"Peak GPU Memory Cached    : {max_reserved / (1024 ** 3):.2f} GB")
+    log(f"Peak GPU Memory Allocated : {max_allocated / (1024 ** 3):.2f} GB")
+    log(f"Peak GPU Memory Reserved  : {max_reserved / (1024 ** 3):.2f} GB")

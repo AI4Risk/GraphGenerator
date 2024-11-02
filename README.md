@@ -22,7 +22,7 @@ Source codes implementation of papers:
 
 To test implementations of the methods, run
 
-```
+```bash
 python main.py --method GraphRNN
 python main.py --method GraphRNN-S
 python main.py --method CPGAE
@@ -38,15 +38,16 @@ The evaluation tools are found in `experiment/eval_tools`. Utilize the functions
 
 ### Data Description
 
-The following datasets are from [linqs](https://linqs.org/datasets/) and [snap](https://snap.stanford.edu/data/). More datasets will be added, especially financial graph data, such as `YelpChi`.
+The following datasets are mainly from [linqs](https://linqs.org/datasets/) and [snap](https://snap.stanford.edu/data/).
 
 | Data     | #Nodes | #Edges  | $d_{mean}$ | GINI  | PWE   |
 | -------- | ------ | ------- | ---------- | ----- | ----- |
-| Citeseer | 3327   | 4732    | 2.774      | 0.435 | 2.420 |
-| Cora     | 2708   | 5429    | 3.898      | 0.405 | 1.932 |
-| Pubmed   | 19717  | 44338   | 4.496      | 0.604 | 2.176 |
+| citeseer | 3327   | 4732    | 2.774      | 0.435 | 2.420 |
+| cora     | 2708   | 5429    | 3.898      | 0.405 | 1.932 |
+| pubmed   | 19717  | 44338   | 4.496      | 0.604 | 2.176 |
 | Epinions | 75879  | 508837  | 10.694     | 0.805 | 2.026 |
-| Google   | 875713 | 5105039 | 9.871      | 0.587 | 1.617 |
+| google   | 875713 | 5105039 | 9.871      | 0.587 | 1.617 |
+| YelpChi  | 45954  | 3846979 | 167.427    | 0.322 | 1.205 |
 
 $d_{mean}$: mean degree.
 
@@ -102,8 +103,8 @@ dgl             2.4.0+cu121
 
 If you find *GraphGenerator* is useful for your research, please consider citing the following papers:
 
-```
-@InProceedings{pmlr-v80-you18a,
+```bibtex
+@inproceedings{pmlr-v80-you18a,
   title={GraphRNN: Generating Realistic Graphs with Deep Auto-regressive Models},
   author={You, Jiaxuan and Ying, Rex and Ren, Xiang and Hamilton, William and Leskovec, Jure},
   booktitle={Proceedings of the 35th International Conference on Machine Learning},

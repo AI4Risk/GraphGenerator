@@ -143,7 +143,7 @@ def main_CPGAE(A, args):
                     gen_mat[seeds.cpu(), :] = edge_from_scores(test_batch_logits.cpu().numpy(), num_edges)
                     gen_time += time.time() - gen_start_time
             
-            eo = A.multiply(gen_mat).sum() / A.sum()
+            eo = edge_overlap(A, gen_mat.tocsr())
             log("Epoch: {}, Overall Loss: {:.5f}, Training Time: {}s".format(epoch, num_loss_all/num_edges_all, train_time))
             log("Edge Overlap: {:.5f}, Total Time: {}s, Generation Time: {}s, Total Time Consumption: {}s"
                 .format(eo, int(time.time() - start_time), gen_time, total_train_time))
@@ -174,8 +174,7 @@ def main_CPGAE(A, args):
             torch.save(checkpoint, args['checkpoint_path'])
             log('Checkpoint saved at epoch {}'.format(epoch))
         
-    log('Peak GPU memory allocated in training process: {}'.format(torch.cuda.max_memory_allocated(args['device'])))
-    log('Peak GPU memory reserved in training process: {}'.format(torch.cuda.max_memory_reserved(args['device'])))
+    logPeakGPUMem(args['device'])
     
     gen_mat = sp.load_npz(fname)
     stat = compute_graph_statistics(gen_mat)

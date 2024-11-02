@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import networkx as nx
 import scipy.sparse as sp
+import scipy.io
 from itertools import count
 import pickle as pkl
 import re
@@ -22,6 +23,10 @@ DATA_FILE_PATH = {
 FEATURES_FILE_PATH = {
     'citeseer': join(DATA_PATH, 'citeseer/citeseer.content'),
     'cora': join(DATA_PATH, 'cora/cora.content'),
+}
+
+MAT_FILE_PATH = {
+    'YelpChi': join(DATA_PATH, 'YelpChi/YelpChi.mat'),
 }
 
 
@@ -181,6 +186,22 @@ def preprocess_pubmed():
                 feat[mapper[node], vec_map[attr]] = val
     
     sp.save_npz(features_path, feat.tocsr())
+
+########## mat file ##########
+def preprocess_mat(file_name):
+    """
+    Preprocess the mat file.
+    """
+    # file path
+    path_prefix = path.join(DATA_PATH, file_name)
+    undirected_path = path.join(path_prefix, '{}_undirected_csr.npz'.format(file_name))
+    features_path = path.join(path_prefix, '{}_features.npz'.format(file_name))
+    
+    mat_contents = scipy.io.loadmat(MAT_FILE_PATH[file_name])
+    
+    sp.save_npz(undirected_path, mat_contents['homo'].tocsr())
+    sp.save_npz(features_path, mat_contents['features'].tocsr())
+    
     
 
 ########## extract all zip files ##########
@@ -210,5 +231,9 @@ if __name__ == '__main__':
     print('Preprocessing pubmed...')
     preprocess_pubmed()
     
+    # mat file
+    for file_name in MAT_FILE_PATH.keys():
+        print(f'Preprocessing {file_name}...')
+        preprocess_mat(file_name)
         
     print('Done.')
