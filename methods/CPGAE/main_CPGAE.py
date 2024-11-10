@@ -16,10 +16,10 @@ from dgl.dataloading import MultiLayerFullNeighborSampler, DataLoader
 import sys
 
 sys.path.append(path.join(path.dirname(__file__), '..', '..', 'experiment'))
-from eval import compute_graph_statistics
+from eval import compute_statistics
 
 def main_CPGAE(A, args):
-    stat = compute_graph_statistics(A)
+    stat = compute_statistics(A)
     log('\ndataset statistics: ' + json.dumps(stat, indent=4))
     random_seed(args['seed']) # set random seed
     
@@ -177,6 +177,6 @@ def main_CPGAE(A, args):
     logPeakGPUMem(args['device'])
     
     gen_mat = sp.load_npz(fname)
-    stat = compute_graph_statistics(gen_mat)
+    stat = compute_statistics(gen_mat)
     log('eval statistics: ' + json.dumps(stat, indent=4))
     
