@@ -4,8 +4,9 @@ Awesome Deep Graph Generator
 
 Source codes implementation of papers:
 
-- `GraphRNN`: GraphRNN: Generating Realistic Graphs with Deep Auto-regressive Models, in ICML 2018.
-- `CPGAE`: Efficient Learning-based Community-Preserving Graph Generation, in ICDE 2022. (GAE version of CPGAN)
+- `BTGAE`: **Divide and Conquer: A Topological Heterogeneity-based Framework for Scalable and Realistic Graph Generation**. *(Official PyTorch Implementation)*
+- `GraphRNN`: **GraphRNN: Generating Realistic Graphs with Deep Auto-regressive Models**, in *ICML* 2018.
+- `CPGAE`: **Efficient Learning-based Community-Preserving Graph Generation**, in *ICDE* 2022. (GAE version of CPGAN)
 
 
 
@@ -23,6 +24,7 @@ Source codes implementation of papers:
 To test implementations of the methods, run
 
 ```bash
+python main.py --method BTGAE
 python main.py --method GraphRNN
 python main.py --method GraphRNN-S
 python main.py --method CPGAE
