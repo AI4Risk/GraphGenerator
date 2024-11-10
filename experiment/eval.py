@@ -106,7 +106,11 @@ def compute_graph_statistics(A, A_dir=None):
 
 ##########  use it ! ##########
 def compute_statistics(A, A_dir=None):
-    if A.shape[0] > 10000:
+    A.indptr = A.indptr.astype('int32')
+    A.indices = A.indices.astype('int32')
+    A.data = A.data.astype('float64')
+        
+    if A.shape[0] > 100000:
         return compute_large_graph_statistics(A, A_dir)
     else:
         return compute_graph_statistics(A, A_dir)

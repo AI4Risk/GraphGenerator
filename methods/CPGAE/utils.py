@@ -3,6 +3,7 @@ import numpy as np
 import scipy.sparse as sp
 import random
 import copy
+import logging
     
 def edge_from_scores(scores_matrix, n_edges):
     degrees = scores_matrix.sum(1)  # The row sum over the scores_matrix.
@@ -43,7 +44,6 @@ def log(msg):
     Args:
         msg (str): message to be printed
     """    
-    import logging
     logging.info(msg)
     print(msg)
     

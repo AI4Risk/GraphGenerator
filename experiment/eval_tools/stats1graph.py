@@ -158,7 +158,8 @@ def edge_distribution_entropy(A):
     N = A.shape[0]
     degrees = np.array(A.sum(axis=-1)).flatten()
     degrees /= degrees.sum()
-    return -np.dot(np.log(degrees), degrees) / np.log(N)
+    eps = 1e-18
+    return -np.dot(np.log(degrees + eps), degrees) / np.log(N)
 
 
 def assortativity(A):
@@ -196,7 +197,7 @@ def cpl(A):
         Characteristic path length.
     """
     P = sp.csgraph.shortest_path(A)
-    return P[((1 - np.isinf(P)) * (1 - np.eye(P.shape[0]))).astype(np.bool)].mean()
+    return P[((1 - np.isinf(P)) * (1 - np.eye(P.shape[0]))).astype(bool)].mean()
 
 
 def n_component(A):

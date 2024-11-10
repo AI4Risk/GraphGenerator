@@ -24,6 +24,8 @@ def parse_args():
         yaml_file = "config/GraphRNN.yaml"
     elif method == 'CPGAE':
         yaml_file = "config/CPGAE.yaml"
+    elif method == 'BTGAE':
+        yaml_file = "config/BTGAE.yaml"
     else:
         raise NotImplementedError("Unsupported method.")
 
@@ -65,7 +67,9 @@ def main(args):
     elif args['method'] == 'CPGAE':
         from methods.CPGAE.main_CPGAE import main_CPGAE
         main_CPGAE(graph, args)
-
+    elif args['method'] == 'BTGAE':
+        from methods.BTGAE.main_BTGAE import main_BTGAE
+        main_BTGAE(graph, args)
 
 ########## log settings ##########
 def log_folder():
