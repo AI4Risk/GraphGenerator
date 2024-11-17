@@ -5,10 +5,11 @@ Awesome Deep Graph Generator
 Source codes implementation of papers:
 
 - `BTGAE`: **Divide and Conquer: A Topological Heterogeneity-based Framework for Scalable and Realistic Graph Generation**. *(Official PyTorch Implementation)*
-- `GraphRNN`: **GraphRNN: Generating Realistic Graphs with Deep Auto-regressive Models**, in *ICML* 2018.
 - `CPGAE`: **Efficient Learning-based Community-Preserving Graph Generation**, in *ICDE* 2022. (GAE version of CPGAN)
 
+Implementation of baselines:
 
+- `GraphRNN`: **GraphRNN: Generating Realistic Graphs with Deep Auto-regressive Models**, in *ICML* 2018.
 
 ## Usage
 
@@ -17,22 +18,18 @@ Source codes implementation of papers:
 1. Run `python experiment/preprocess.py` to process a graph into a sparse matrix and save the matrix as an `.npz` file.
 2. You can run `python experiment/eval.py` to review the information about the datasets.
 
-
-
 ### Training
 
 To test implementations of the methods, run
 
 ```bash
 python main.py --method BTGAE
+python main.py --method CPGAE
 python main.py --method GraphRNN
 python main.py --method GraphRNN-S
-python main.py --method CPGAE
 ```
 
 Configuration files can be found in `config/`.
-
-
 
 ### Evalutaion
 
@@ -57,8 +54,6 @@ $d_{mean}$: mean degree.
 
 `PWE`: power-law exponent.
 
-
-
 ## Test Result
 
 The performance of models tested on datasets are listed as follows:
@@ -77,8 +72,6 @@ The repository is organized as follows:
 - `data/`: dataset files.
 - `requirements.txt`: package dependencies.
 
-
-
 ## Requirements
 
 ```
@@ -92,27 +85,16 @@ python-louvain  0.16
 dgl             2.4.0+cu121
 ```
 
-
-
 ### Contributors :
 
 <a href="https://github.com/AI4Risk/GraphGenerator/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=AI4Risk/GraphGenerator" /></a>
-
-
 
 ### Citing
 
 If you find *GraphGenerator* is useful for your research, please consider citing the following papers:
 
 ```bibtex
-@inproceedings{pmlr-v80-you18a,
-  title={GraphRNN: Generating Realistic Graphs with Deep Auto-regressive Models},
-  author={You, Jiaxuan and Ying, Rex and Ren, Xiang and Hamilton, William and Leskovec, Jure},
-  booktitle={Proceedings of the 35th International Conference on Machine Learning},
-  year={2018}
-}
-
 @inproceedings{xiang2022efficient,
   title={Efficient learning-based community-preserving graph generation},
   author={Xiang, Sheng and Cheng, Dawei and Zhang, Jianfu and Ma, Zhenwei and Wang, Xiaoyang and Zhang, Ying},
