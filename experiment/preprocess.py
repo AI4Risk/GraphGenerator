@@ -10,6 +10,8 @@ import os
 from os import path
 from os.path import join
 import zipfile
+from datetime import timedelta
+from collections import defaultdict
 
 ########## csv file ##########
 DATA_PATH = join(path.dirname(__file__), '..', 'data')
@@ -28,6 +30,12 @@ FEATURES_FILE_PATH = {
 MAT_FILE_PATH = {
     'YelpChi': join(DATA_PATH, 'YelpChi/YelpChi.mat'),
 }
+
+TEMPORAL_CONFIG = {
+    'email': {'start_win':480, 'end_win':5, 'SLICE_DAYS':1, 'file_name':'email-dnc.edges'},
+    'bitcoin': {'start_win':200, 'end_win':600, 'SLICE_DAYS':30, 'file_name':'soc-sign-bitcoinalpha.csv'},
+    'vote': {'start_win':200, 'end_win':540, 'SLICE_DAYS':15, 'divide_num':20, 'file_name':'soc-wiki-elec.edges'}
+    }
 
 
 ########## tool functions ##########
@@ -196,13 +204,117 @@ def preprocess_mat(file_name):
     path_prefix = path.join(DATA_PATH, file_name)
     undirected_path = path.join(path_prefix, '{}_undirected_csr.npz'.format(file_name))
     features_path = path.join(path_prefix, '{}_features.npz'.format(file_name))
+    if path.exists(undirected_path) and path.exists(features_path):
+        print('{} has been preprocessed.'.format(file_name))
+        return
     
     mat_contents = scipy.io.loadmat(MAT_FILE_PATH[file_name])
     
     sp.save_npz(undirected_path, mat_contents['homo'].tocsr())
     sp.save_npz(features_path, mat_contents['features'].tocsr())
     
+########## temporal file ##########
+def preprocess_temporal_data(data_name):
+    conf = TEMPORAL_CONFIG
+    dir_path = path.join(DATA_PATH, data_name)
+    file_path = path.join(dir_path, conf[data_name]['file_name'])
+    save_path = path.join(dir_path, f'{data_name}.pkl')
+    if path.exists(save_path):
+        print(f'{data_name} has been preprocessed.')
+        return
     
+    start_win = conf[data_name]['start_win']
+    end_win = conf[data_name]['end_win']
+    SLICE_DAYS = conf[data_name]['SLICE_DAYS']
+    divide_num = conf[data_name].get('divide_num', 1)
+    
+    if data_name == 'vote':
+        data=pd.read_csv(file_path, sep=' ')
+    else:
+        data=pd.read_csv(file_path)
+
+    data['date']=pd.to_datetime(data['value'],unit='s')
+
+    if data_name == 'email': # email data has no weight
+        weights = [1]*len(data)
+        links=list(zip(data['src'],data['dst'],weights,data['date'])) 
+    else:
+        links=list(zip(data['src'],data['dst'],data['weight'],data['date']))
+
+    links.sort(key =lambda x: x[-1])
+
+    if data_name == 'email':
+        links=links[1:] # remove the first edge, because its time is far away from the others
+
+    ts=[link[-1] for link in links] 
+
+    START_DATE=min(ts)+timedelta(start_win) 
+    END_DATE = max(ts)-timedelta(end_win) 
+    print("Spliting Time Interval: \n Start Time : {}, End Time : {}".format(START_DATE, END_DATE))
+
+    slice_links = defaultdict(lambda: nx.DiGraph())
+    links_groups=defaultdict(lambda:[])
+    for (a, b, v, time) in links:
+        
+        datetime_object = time
+        
+        if datetime_object<=START_DATE or datetime_object>END_DATE:
+            continue
+        
+        slice_id = (datetime_object - START_DATE).days//SLICE_DAYS
+        slice_id = max(slice_id, 0)
+
+        if slice_id not in slice_links.keys():
+            slice_links[slice_id] = nx.DiGraph()
+            if slice_id > 0:
+                slice_links[slice_id].add_nodes_from(slice_links[slice_id-1].nodes(data=True))
+                if data_name != 'email': # other data is too large, so it's hard to handle edge addition and deletion
+                    slice_links[slice_id].add_edges_from(slice_links[slice_id-1].edges())
+                    links_groups[slice_id].extend(links_groups[slice_id-1])
+        slice_links[slice_id].add_edge(a,b)
+        links_groups[slice_id].append([a,b,v])
+        
+    for slice_id in range(len(links_groups)):
+        links_groups[slice_id]=pd.DataFrame(links_groups[slice_id],columns=['src','dst','value'])
+
+    used_nodes = []
+    for id, slice in slice_links.items():
+        print("In snapshoot {:<2}, #Nodes={:<5}, #Edges={:<5}".format(id, \
+                            slice.number_of_nodes(), slice.number_of_edges()))
+
+        for node in slice.nodes():
+            if not node in used_nodes:
+                used_nodes.append(node)
+                
+    # remap nodes in graphs. Cause start time is not zero, the node index is not consistent
+    nodes_consistent_map = {node:idx for idx, node in enumerate(used_nodes)}
+    for id, slice in slice_links.items():
+        slice_links[id] = nx.relabel_nodes(slice, nodes_consistent_map) 
+        
+    for slice_id in range(len(links_groups)):
+        links_groups[slice_id]['src']=links_groups[slice_id]['src'].map(nodes_consistent_map)
+        links_groups[slice_id]['dst']=links_groups[slice_id]['dst'].map(nodes_consistent_map)
+
+    snapshots=[] 
+    for id, slice in slice_links.items():
+        attributes = [] 
+        for node in slice:
+            if data_name == 'vote':
+                sum_votes=links_groups[id].query('dst=={}'.format(node)).value.sum()/divide_num
+                attrs=[sum_votes]
+            elif data_name == 'bitcoin':
+                avg_rates=links_groups[id].query('dst=={}'.format(node)).value.mean() if slice.in_degree(node)!=0 else 0
+                attrs=[avg_rates,slice.in_degree(node),slice.out_degree(node)]
+            else:
+                attrs=[slice.in_degree(node),slice.out_degree(node)]
+            attributes.append(attrs)
+        slice.graph["feat"]=attributes 
+        snapshots.append(slice)
+    
+    
+    with open(save_path, "wb") as f:
+        pkl.dump(snapshots, f)
+    print("Processed data has been saved at {}".format(save_path))
 
 ########## extract all zip files ##########
 def extract_all_zip_files():
@@ -224,16 +336,20 @@ if __name__ == '__main__':
     
     # csv file
     for file_name in DATA_FILE_PATH.keys():
-        print(f'Preprocessing {file_name}...')
+        print(f'\n\nPreprocessing {file_name}...')
         preprocess_csv(file_name)
     
     # pubmed
-    print('Preprocessing pubmed...')
+    print('\n\nPreprocessing pubmed...')
     preprocess_pubmed()
     
     # mat file
     for file_name in MAT_FILE_PATH.keys():
-        print(f'Preprocessing {file_name}...')
+        print(f'\n\nPreprocessing {file_name}...')
         preprocess_mat(file_name)
-        
+    
+    # temporal data
+    for data_name in TEMPORAL_CONFIG.keys():
+        print(f'\n\nPreprocessing {data_name}...')
+        preprocess_temporal_data(data_name)
     print('Done.')

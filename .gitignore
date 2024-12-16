@@ -175,3 +175,6 @@ data/*/*.content
 data/*/*.txt
 data/*/*.tab
 data/*/*.mat
+data/*/*.edges
+data/*/*.csv
+data/*/*.pkl
