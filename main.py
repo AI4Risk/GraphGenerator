@@ -6,6 +6,7 @@ import os
 import scipy.sparse as sp
 import logging
 from datetime import datetime
+import pickle as pkl
 
 
 ########## main ##########
@@ -26,6 +27,8 @@ def parse_args():
         yaml_file = "config/CPGAE.yaml"
     elif method == 'BTGAE':
         yaml_file = "config/BTGAE.yaml"
+    elif method == 'VRDAG':
+        yaml_file = "config/VRDAG.yaml"
     else:
         raise NotImplementedError("Unsupported method.")
 
@@ -37,11 +40,18 @@ def parse_args():
     
     args = {
         'method': method,
-        'data_path': abspath(join('data', data, f'{data}_undirected_csr.npz')),
         'graph_save_path': abspath(join('graphs', data)),
         'checkpoint_path': abspath(join('models', '{}_{}.ckpt'.format(data, method))),
     }
     
+    if method == 'VRDAG':
+        if data not in ['email', 'bitcoin', 'vote']:
+            raise ValueError("Unsupported dataset for VRDAG.")
+        args['data_path'] = join('data', data, f'{data}.pkl')
+    else:
+        if data in ['email', 'bitcoin', 'vote']:
+            raise ValueError("Unsupported dataset for static graph method.")
+        args['data_path'] = join('data', data, f'{data}_undirected_csr.npz')
     if not os.path.exists(args['graph_save_path']):
         os.makedirs(args['graph_save_path'])
     
@@ -53,12 +63,20 @@ def parse_args():
 def main(args):
     # set up logging
     log_folder()
-    logging_conf(args['method'])
+    log_name = logging_conf(args['method'])
+    args['log_name'] = log_name
     formatted_args = json.dumps(args, indent=4)
     log(f"Settings: {formatted_args}")
     
     # load data 
-    graph = sp.load_npz(args['data_path'])
+    data_path = args['data_path']
+    if data_path.endswith('.npz'):
+        graph = sp.load_npz(data_path)
+    elif data_path.endswith('.pkl'):
+        with open(data_path, "rb") as f:
+            graph_seq = pkl.load(f)
+    else:
+        raise ValueError("Unsupported data format.")
     
     # run method
     if args['method'] in ['GraphRNN', 'GraphRNN-S']:    
@@ -70,6 +88,9 @@ def main(args):
     elif args['method'] == 'BTGAE':
         from methods.BTGAE.main_BTGAE import main_BTGAE
         main_BTGAE(graph, args)
+    elif args['method'] == 'VRDAG':
+        from methods.VRDAG.main_VRDAG import main_VRDAG
+        main_VRDAG(graph_seq, args)
 
 ########## log settings ##########
 def log_folder():
@@ -79,12 +100,14 @@ def log_folder():
         print(f"folder '{log_folder_name}' is created.")
 
 def logging_conf(method):
-    log_file = os.path.join('log/', method + '-' + datetime.now().strftime("%m-%d_%H:%M") + '.log')
+    log_name = method + '-' + datetime.now().strftime("%m-%d %H:%M")
+    log_file = os.path.join('log/', log_name + '.log')
     logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s %(levelname)s:%(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S',
                     filename=log_file,
                     filemode='w')
+    return log_name
 
 def log(msg):
     """For uniform printing in the repository.

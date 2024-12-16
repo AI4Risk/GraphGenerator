@@ -128,8 +128,21 @@ def power_law_alpha(A):
         degrees, xmin=max(np.min(degrees), 1), verbose=False
     ).power_law.alpha
 
+def power_law_exp(A_in,flow='out'):
+    '''
+    For digraph.
+    Compute the same thing as power_law_alpha.
+    '''
+    if flow=='out':
+        degrees=A_in.sum(axis=0)
+    elif flow=='in':
+        degrees=A_in.sum(axis=1)
+    else:
+        raise ValueError('This flow direction does not exist!')
+    
+    return powerlaw.Fit(degrees, xmin=max(np.min(degrees), 1)).power_law.alpha
 
-def gini(A):
+def gini(A, flow='out'):
     """
     Compute the Gini coefficient of the degree distribution of the input graph.
     Args:
@@ -139,7 +152,11 @@ def gini(A):
         Gini coefficient.
     """
     N = A.shape[0]
-    degrees_sorted = np.sort(np.array(A.sum(axis=-1)).flatten())
+    if flow=='out':
+        degrees = A.sum(axis=0)
+    else:
+        degrees = A.sum(axis=1)
+    degrees_sorted = np.sort(np.array(degrees).flatten())
     return (
         2 * np.dot(degrees_sorted, np.arange(1, N + 1)) / (N * np.sum(degrees_sorted))
         - (N + 1) / N
@@ -211,3 +228,13 @@ def n_component(A):
     """
     G = nx.Graph(A)
     return len(list(nx.connected_components(G)))
+
+def node_div_dist(A_in):
+    
+    out_degree=A_in.sum(axis=0) 
+    in_degree=A_in.sum(axis=1) 
+    
+    max_degree=np.where(out_degree>in_degree,out_degree,in_degree)
+    max_degree=np.where(max_degree>0,max_degree,1)
+    
+    return ((out_degree-in_degree)/max_degree).reshape(-1,1) # [N,1]

@@ -1,0 +1,48 @@
+data: email # email, bitcoin, vote
+eps: !!float 1e-6
+num_epoch: 50
+learning_rate: !!float 6e-2
+weight_decay: !!float 1e-3
+eta_min: !!float 1e-4
+sample_interval: 10 # Sample the graph and evaluate its performance at each sample interval.
+save_model_interval: 5
+clip_norm: 10
+device: 'cuda:0'
+seed: 2023
+resume: False
+
+# model structure
+h_dim: 8
+z_dim: 8
+bi_flow: True
+enc_hid_dim: 16
+post_hid_dim: 16
+prior_hid_dim: 16
+attr_hid_dim: 16
+n_encoder_layer: 2
+n_rnn_layer: 1
+ini_method: 'zero'
+num_mix_component: 3
+bernoulli_hid_dim: 16
+reduce: 'mean'
+dec_method: 'gnn'
+no_neg: True
+activation: 'sin'
+is_vectorize: True
+attr_optimize: 'sce'
+pos_weight: 3
+neg_num: 20
+
+# eval
+attr_col: {'bitcoin': [0],
+          'email':[0,1],
+          'vote':[0],
+          'loan': [0, 1]}
+verbose: False
+is_ratio: True
+mmd_beta: !!float 2.0
+eval_method: 'mean'
+num_bins: 50
+n_box: 5
+deg_sep: 2
+
