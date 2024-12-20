@@ -1,0 +1,16 @@
+data: email # email, bitcoin, vote
+epochs: 500
+lr: !!float 4e-3
+eta_min: !!float 1e-6
+weight_decay: !!float 1e-4
+batch_size: 128
+eval_per_epochs: 50
+resume: False
+
+
+n_layers: 1
+H: 128
+n_heads: 4
+
+seed: 2024
+device: 'cuda:0'

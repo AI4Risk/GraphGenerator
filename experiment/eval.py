@@ -37,18 +37,16 @@ def compute_large_graph_statistics(A, A_dir=None):
         'n_edges': num_edges,
         "d_max": max_degree(A),
         "d_min": min_degree(A),
-        "d": average_degree(A),
+        "d_mean": average_degree(A),
         "LCC": LCC(A),
         "wedge_count": wedge_count(A),
         "claw_count": claw_count(A),
         "triangle_count": triangle_count(A),
-        "square_count": -1,
         "power_law_exp": power_law_alpha(A),
         "gini": gini(A),
         "rel_edge_distr_entropy": edge_distribution_entropy(A),
         "assortativity": assortativity(A),
-        "clustering_coefficient": clustering_coefficient(A),
-        "cpl": -1
+        "clustering_coefficient": clustering_coefficient(A)
         }
     
     statistics = {k: int(v) if isinstance(v, int) else round(float(v), 4) for k, v in statistics.items()}
@@ -87,7 +85,7 @@ def compute_graph_statistics(A, A_dir=None):
         'n_edges': num_edges,
         "d_max": max_degree(A),
         "d_min": min_degree(A),
-        "d": average_degree(A),
+        "d_mean": average_degree(A),
         "LCC": LCC(A),
         "wedge_count": wedge_count(A),
         "claw_count": claw_count(A),
@@ -97,6 +95,7 @@ def compute_graph_statistics(A, A_dir=None):
         "gini": gini(A),
         "rel_edge_distr_entropy": edge_distribution_entropy(A),
         "assortativity": assortativity(A),
+        "n_component": n_component(A),
         "clustering_coefficient": clustering_coefficient(A),
         "cpl": cpl(A)
         }

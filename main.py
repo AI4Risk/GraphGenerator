@@ -29,6 +29,8 @@ def parse_args():
         yaml_file = "config/BTGAE.yaml"
     elif method == 'VRDAG':
         yaml_file = "config/VRDAG.yaml"
+    elif method == 'TGAE':
+        yaml_file = "config/TGAE.yaml"
     else:
         raise NotImplementedError("Unsupported method.")
 
@@ -44,7 +46,7 @@ def parse_args():
         'checkpoint_path': abspath(join('models', '{}_{}.ckpt'.format(data, method))),
     }
     
-    if method == 'VRDAG':
+    if method in ['VRDAG', 'TGAE']:
         if data not in ['email', 'bitcoin', 'vote']:
             raise ValueError("Unsupported dataset for VRDAG.")
         args['data_path'] = join('data', data, f'{data}.pkl')
@@ -91,6 +93,9 @@ def main(args):
     elif args['method'] == 'VRDAG':
         from methods.VRDAG.main_VRDAG import main_VRDAG
         main_VRDAG(graph_seq, args)
+    elif args['method'] == 'TGAE':
+        from methods.TGAE.main_TGAE import main_TGAE
+        main_TGAE(graph_seq, args)
 
 ########## log settings ##########
 def log_folder():
