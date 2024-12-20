@@ -7,6 +7,7 @@ Source codes implementation of papers:
 - `BTGAE`: **Divide and Conquer: A Topological Heterogeneity-based Framework for Scalable and Realistic Graph Generation**. *(Official PyTorch Implementation)*
 - `CPGAE`: **Efficient Learning-based Community-Preserving Graph Generation**, in *ICDE* 2022. (GAE version of CPGAN)
 - `VRDAG`: **Efficient Dynamic Attributed Graph Generation**, in *ICDE* 2025.
+- `TGAE`: **Efficient Learning-based Graph Simulation for Temporal Graphs**, in *ICDE* 2025.
 
 Implementation of baselines:
 
@@ -27,6 +28,7 @@ To test implementations of the methods, run
 python main.py --method BTGAE
 python main.py --method CPGAE
 python main.py --method VRDAG
+python main.py --method TGAE
 python main.py --method GraphRNN
 python main.py --method GraphRNN-S
 ```
@@ -116,9 +118,17 @@ If you find *GraphGenerator* is useful for your research, please consider citing
   organization={IEEE}
 }
 
-@inproceedings{li2024efficient,
+@inproceedings{li2025efficient,
   title={Efficient Dynamic Attributed Graph Generation},
   author={Li, Fan and Wang, Xiaoyang and Cheng, Dawei and Chen, Cong and Zhang, Ying and Lin, Xuemin},
+  booktitle={2025 IEEE 41th International Conference on Data Engineering (ICDE)},
+  year={2025},
+  organization={IEEE}
+}
+
+@inproceedings{xiang2025efficient,
+  title={Efficient Learning-based Graph Simulation for Temporal Graphs},
+  author={Xiang, Sheng and Xu, Chenhao and  Cheng, Dawei and Wang, Xiaoyang and Zhang, Ying},
   booktitle={2025 IEEE 41th International Conference on Data Engineering (ICDE)},
   year={2025},
   organization={IEEE}
