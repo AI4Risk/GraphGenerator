@@ -16,7 +16,7 @@ import time
 import sys
 from os import path
 sys.path.append(path.join(path.dirname(__file__), '..', '..', 'experiment'))
-from eval import compute_statistics
+from graph_metrics import compute_statistics, CompEvaluator
 
 class Trainer:
     def __init__(self, args):
@@ -348,6 +348,12 @@ class Trainer:
         stat_pred = compute_statistics(pred)
         log(json.dumps(stat_pred, indent=4))
         
+        evaluator = CompEvaluator()
+        res_mean = evaluator.comp_graph_stats(target, pred)
+        log("res_mean:" + json.dumps(res_mean, indent=4))
+        
+        res_med = evaluator.comp_graph_stats(target, pred, eval_method='med')
+        log("res_med:" + json.dumps(res_med, indent=4))
         
         logPeakGPUMem(self.args['device'])
         

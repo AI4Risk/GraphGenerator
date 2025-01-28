@@ -36,7 +36,7 @@ Configuration files can be found in `config/`.
 
 ### Evalutaion
 
-The evaluation tools are found in `experiment/eval_tools`. Utilize the functions within `stats1graph.py` for graph statistics and those in `stats2graphs.py` for calculating MMD between ground truth and generated graphs.
+The evaluation tools are located in the `experiment/graph_metrics` directory. For usage instructions, see [README.md](https://github.com/AI4Risk/GraphGenerator/blob/main/experiment/graph_metrics/README.md).
 
 ### Data Description
 

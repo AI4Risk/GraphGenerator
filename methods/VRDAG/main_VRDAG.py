@@ -14,10 +14,9 @@ from .var_dist import *
 from .generator import VRDAG
 from .utils import *
 
-
 import sys
-sys.path.append(path.join(path.dirname(__file__), '..', '..', 'experiment', 'eval_tools'))
-from TGEvaluator import StrucEvaluator,evaluate_attr
+sys.path.append(path.join(path.dirname(__file__), '..', '..', 'experiment'))
+from graph_metrics import CompEvaluator
     
 
 def main_VRDAG(graph_seq, args):
@@ -40,10 +39,8 @@ def main_VRDAG(graph_seq, args):
     # scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[20,40,60], gamma=0.5)
     optimizer = torch.optim.AdamW(model.parameters(), lr=args['learning_rate'], weight_decay=args['weight_decay'])
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args['num_epoch'], eta_min=args['eta_min'])
-    
-    judge_s = StrucEvaluator(eval_time_len=args['seq_len'],eval_method=args['eval_method'],
-                       verbose=args['verbose'],is_ratio=args['is_ratio'],mmd_beta=args['mmd_beta']) 
 
+    judge_s = CompEvaluator(mmd_beta=args['mmd_beta'])
     A_src=[filtered_adj(A_list[j].numpy()) for j in range(args['seq_len'])]
     X_src=[X_list[k].numpy() for k in range(args['seq_len'])] 
     
@@ -53,6 +50,9 @@ def main_VRDAG(graph_seq, args):
         log('Resumed from epoch {}'.format(epoch_begin))
     else:
         epoch_begin = 0
+    
+    best_mean_res = {}
+    best_med_res = {}
         
     for n_epoch in tqdm(range(epoch_begin, args['num_epoch'])):
         if args['ini_method']=='zero':
@@ -108,6 +108,7 @@ def main_VRDAG(graph_seq, args):
         writer.add_scalar('train/attr_loss', avg_attr_loss/args['seq_len'], n_epoch)
         writer.add_scalar('train/struc_loss', avg_struc_loss/args['seq_len'], n_epoch)
         writer.add_scalar('train/kld_loss', avg_kld_loss/args['seq_len'], n_epoch)
+        writer.flush()
         
         time_start = time.time()
         gen_data=model._sampling(args['seq_len'])
@@ -138,57 +139,58 @@ def main_VRDAG(graph_seq, args):
                 samples = [(A_gen[i], X_gen[i]) for i in range(args['seq_len'])]
                 save_gen_data(args['graph_save_path'], samples)
                 
-                res_dict=judge_s.comp_graph_stats(A_src,A_gen,stats_list=['deg_dist_in',
-                                                                        'deg_dist_out',
-                                                                        'clus_dist',
-                                                                        ])
+                mean_res = judge_s.comp_graph_stats(A_src,A_gen)
+                med_res = judge_s.comp_graph_stats(A_src,A_gen,eval_method='med')
                 
-              
+
+                # attr_entrophy_js,attr_corr=evaluate_attr(src_attrs=X_src,
+                #                                     gen_attrs=X_gen,
+                #                                     diff='js',
+                #                                     bins=20,
+                #                                     low_bound=0,
+                #                                     upper_bound=1,
+                #                                     n_step=args['seq_len'])
                 
-                attr_entrophy_js,attr_corr=evaluate_attr(src_attrs=X_src,
-                                                    gen_attrs=X_gen,
-                                                    diff='js',
-                                                    bins=20,
-                                                    low_bound=0,
-                                                    upper_bound=1,
-                                                    n_step=args['seq_len'])
-                
-                attr_entrophy_emd,attr_corr=evaluate_attr(src_attrs=X_src,
-                                                gen_attrs=X_gen,
-                                                diff='emd',
-                                                bins=20,
-                                                low_bound=0,
-                                                upper_bound=1,
-                                                n_step=args['seq_len'])
+                # attr_entrophy_emd,attr_corr=evaluate_attr(src_attrs=X_src,
+                #                                 gen_attrs=X_gen,
+                #                                 diff='emd',
+                #                                 bins=20,
+                #                                 low_bound=0,
+                #                                 upper_bound=1,
+                #                                 n_step=args['seq_len'])
                 
                 
                 log('-------------Graph structure statistics are as follows-------------')
-                for k,v in res_dict.items():
-                    log('{}: {}'.format(k,v))
-                log('-------------------------------------------------------------------\n')
+                for key in mean_res.keys():
+                    log("f_avg({}): {:.4f}".format(key, mean_res[key]))
+                    log("f_med({}): {:.4f}".format(key, med_res[key]))
+                    if key not in best_mean_res or mean_res[key] < best_mean_res[key]:
+                        best_mean_res[key] = mean_res[key]
+                    if key not in best_med_res or med_res[key] < best_med_res[key]:
+                        best_med_res[key] = med_res[key]
+                # log('-------------------------------------------------------------------\n')
 
-                log('-------------Node attributes evaluation are as follows-------------')
+                # log('-------------Node attributes evaluation are as follows-------------')
                 
                 
-                log('Attribute Entrophy- : JSD: {}  EMD: {}'.format(attr_entrophy_js,attr_entrophy_emd))
-                if attr_corr is not None:
-                    log('Attribute Correlation Error: {}'.format(attr_corr))
+                # log('Attribute Entrophy- : JSD: {}  EMD: {}'.format(attr_entrophy_js,attr_entrophy_emd))
+                # if attr_corr is not None:
+                #     log('Attribute Correlation Error: {}'.format(attr_corr))
                 
                 log('-------------------------------------------------------------------\n')
-                
-                iter_num=(n_epoch+1)//args['sample_interval']
-                writer.add_scalar('eval/deg_in', res_dict['deg_dist_in'], iter_num)
-                writer.add_scalar('eval/deg_out', res_dict['deg_dist_out'], iter_num)
-                writer.add_scalar('eval/clus', res_dict['clus_dist'], iter_num)
-                writer.add_scalar('eval/attr_jsd', attr_entrophy_js, iter_num)
-                writer.add_scalar('eval/attr_emd', attr_entrophy_emd, iter_num)
-                writer.flush()
                 
                 del gen_data
                 del A_gen
                 del X_gen
                 
                 gc.collect()
+    
+    log('Best Mean Results:')
+    for key in best_mean_res.keys():
+        log("f_avg({}): {:.4f}".format(key, best_mean_res[key]))
+    log('Best Median Results:')
+    for key in best_med_res.keys():
+        log("f_med({}): {:.4f}".format(key, best_med_res[key]))
     
     save_checkpoint(model, optimizer, args['num_epoch'] - 1, args['checkpoint_path'])
     log('Model Saved!')

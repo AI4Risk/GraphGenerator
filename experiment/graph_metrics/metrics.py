@@ -2,7 +2,7 @@ import numpy as np
 import scipy.sparse as sp
 import networkx as nx
 import powerlaw
-
+from networkx.algorithms.centrality import betweenness_centrality, closeness_centrality
 
 def max_degree(A):
     """
@@ -39,7 +39,7 @@ def average_degree(A):
     Returns:
         Average degree.
     """
-    degrees = A.sum(axis=-1)
+    degrees = A.sum(axis=0)
     return np.mean(degrees)
 
 
@@ -54,6 +54,19 @@ def LCC(A):
     """
     G = nx.Graph(A)
     return max([len(c) for c in nx.connected_components(G)])
+
+
+def n_component(A):
+    """
+    Compute the number of connected components (N-Component).
+    Args:
+        A (sp.csr.csr_matrix): The input adjacency matrix.
+    
+    Returns:
+        Number of connected components.
+    """
+    G = nx.Graph(A)
+    return len(list(nx.connected_components(G)))
 
 
 def wedge_count(A):
@@ -123,10 +136,12 @@ def power_law_alpha(A):
     Returns:
         Power law coefficient.
     """
-    degrees = np.array(A.sum(axis=-1)).flatten()
+    degrees = np.array(A.sum(axis=0)).flatten()
+    degrees = degrees[degrees>0]
     return powerlaw.Fit(
         degrees, xmin=max(np.min(degrees), 1), verbose=False
     ).power_law.alpha
+
 
 def power_law_exp(A_in,flow='out'):
     '''
@@ -140,7 +155,10 @@ def power_law_exp(A_in,flow='out'):
     else:
         raise ValueError('This flow direction does not exist!')
     
+    degrees = np.array(degrees).flatten()
+    degrees = degrees[degrees>0]
     return powerlaw.Fit(degrees, xmin=max(np.min(degrees), 1)).power_law.alpha
+
 
 def gini(A, flow='out'):
     """
@@ -194,14 +212,18 @@ def assortativity(A):
 
 def clustering_coefficient(A):
     """
-    Compute the clustering coefficient of the input graph.
+    Compute the global clustering coefficient of the input graph.
     Args:
         A (sp.csr.csr_matrix): The input adjacency matrix.
     
     Returns:
         Clustering coefficient.
     """
-    return 3 * triangle_count(A) / wedge_count(A)
+    n_wedges = wedge_count(A)
+    if n_wedges == 0:
+        return 0
+    n_triangles = triangle_count(A)
+    return 3 * n_triangles / n_wedges
 
 
 def cpl(A):
@@ -217,18 +239,6 @@ def cpl(A):
     return P[((1 - np.isinf(P)) * (1 - np.eye(P.shape[0]))).astype(bool)].mean()
 
 
-def n_component(A):
-    """
-    Compute the number of connected components (N-Component).
-    Args:
-        A (sp.csr.csr_matrix): The input adjacency matrix.
-    
-    Returns:
-        Number of connected components.
-    """
-    G = nx.Graph(A)
-    return len(list(nx.connected_components(G)))
-
 def node_div_dist(A_in):
     
     out_degree=A_in.sum(axis=0) 
@@ -237,4 +247,27 @@ def node_div_dist(A_in):
     max_degree=np.where(out_degree>in_degree,out_degree,in_degree)
     max_degree=np.where(max_degree>0,max_degree,1)
     
-    return ((out_degree-in_degree)/max_degree).reshape(-1,1) # [N,1]
+    return ((out_degree-in_degree)/max_degree).reshape(-1)
+
+
+def deg_dist(A_in, flow='in'):
+    if flow=='out':
+        return A_in.sum(axis=1)
+    elif flow=='in':
+        return A_in.sum(axis=0)
+
+
+def clus_dist(A_in):
+    
+    return list(nx.clustering(nx.from_scipy_sparse_array(A_in)).values())
+
+
+#! Note: BC and CC needs long running time! 
+def mean_betweeness_centrality(A_in): # Mean Betweeness Centrality
+    G = nx.from_scipy_sparse_matrix(A_in)
+    return np.mean(list(betweenness_centrality(G).values())) 
+    
+
+def mean_closeness_centrality(A_in): # Mean Closeness Centrality
+    G = nx.from_scipy_sparse_matrix(A_in)
+    return np.mean(list(closeness_centrality(G).values())) 

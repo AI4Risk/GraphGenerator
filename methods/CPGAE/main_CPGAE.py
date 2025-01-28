@@ -16,7 +16,7 @@ from dgl.dataloading import MultiLayerFullNeighborSampler, DataLoader
 import sys
 
 sys.path.append(path.join(path.dirname(__file__), '..', '..', 'experiment'))
-from eval import compute_statistics
+from graph_metrics import compute_statistics, CompEvaluator
 
 def main_CPGAE(A, args):
     stat = compute_statistics(A)
@@ -64,7 +64,7 @@ def main_CPGAE(A, args):
     
     
     ########## resume ##########
-    resume = args['resume']
+    
     if args['resume']:
         log('Resuming from checkpoint...')
         ckpt = torch.load(args['checkpoint_path'])
@@ -179,4 +179,11 @@ def main_CPGAE(A, args):
     gen_mat = sp.load_npz(fname)
     stat = compute_statistics(gen_mat)
     log('eval statistics: ' + json.dumps(stat, indent=4))
+    
+    evaluator = CompEvaluator()
+    res_mean = evaluator.comp_graph_stats(A, gen_mat)
+    log("res_mean:" + json.dumps(res_mean, indent=4))
+    
+    res_med = evaluator.comp_graph_stats(A, gen_mat, eval_method='med')
+    log("res_med:" + json.dumps(res_med, indent=4))
     

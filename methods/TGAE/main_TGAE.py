@@ -14,8 +14,8 @@ import scipy.sparse as sp
 from .TGAE import ScalableTGAE
 # from ...experiment.eval import compute_statistics
 sys.path.append(path.join(path.dirname(__file__), '..', '..', 'experiment'))
-from eval import compute_statistics
 from .utils import *
+from graph_metrics import compute_statistics, CompEvaluator
 
 def compute_temporal_graph_statistics(A_T):
     seq_len = A_T.shape[0]//A_T.shape[1]
@@ -51,7 +51,7 @@ def cal_avg_median_stats(adj, gen_mat):
 
 def main_TGAE(graph_seq, args):
     random_seed(args["seed"])
-    
+    evaluator = CompEvaluator()
     dgl_g, adj, nids = from_nx_to_sparse_adj(graph_seq)
     dgl_g = dgl.add_self_loop(dgl_g)
     
@@ -127,7 +127,13 @@ def main_TGAE(graph_seq, args):
             log("Epoch: {:03d}, Edge Overlap: {:07f}".format(epoch + 1, eo))
             
             log('\n\n' + '='*80)
-            f_avg, f_med= cal_avg_median_stats(adj, gen_mat)
+            # f_avg, f_med= cal_avg_median_stats(adj, gen_mat)
+            seq_len = adj.shape[0]//adj.shape[1]
+            num_nodes = adj.shape[1]
+            A_seq = [adj[i*num_nodes:(i+1)*num_nodes, :] for i in range(seq_len)]
+            A_gen_seq = [gen_mat[i*num_nodes:(i+1)*num_nodes, :] for i in range(seq_len)]
+            f_avg = evaluator.comp_graph_stats(A_seq, A_gen_seq)
+            f_med = evaluator.comp_graph_stats(A_seq, A_gen_seq, eval_method='med')
             for key in f_avg.keys():
                 log("f_avg({}): {:.6f}".format(key, f_avg[key]))
                 log("f_med({}): {:.6f}".format(key, f_med[key]))
