@@ -5,9 +5,9 @@ Awesome Deep Graph Generator
 Source codes implementation of papers:
 
 - `BTGAE`: **Divide and Conquer: A Topological Heterogeneity-based Framework for Scalable and Realistic Graph Generation**. *(Official PyTorch Implementation)*
-- `CPGAE`: **Efficient Learning-based Community-Preserving Graph Generation**, in *ICDE* 2022. (GAE version of CPGAN)
 - `VRDAG`: **Efficient Dynamic Attributed Graph Generation**, in *ICDE* 2025.
 - `TGAE`: **Efficient Learning-based Graph Simulation for Temporal Graphs**, in *ICDE* 2025.
+- `CPGAE`: **Efficient Learning-based Community-Preserving Graph Generation**, in *ICDE* 2022. (GAE version of CPGAN)
 
 Implementation of baselines:
 
@@ -18,7 +18,6 @@ Implementation of baselines:
 ### Data processing
 
 1. Run `python experiment/preprocess.py` to process a graph into a sparse matrix and save the matrix as an `.npz` file or `.pkl` file.
-2. You can run `python experiment/eval.py` to review the information about the datasets.
 
 ### Training
 
@@ -26,9 +25,9 @@ To test implementations of the methods, run
 
 ```bash
 python main.py --method BTGAE
-python main.py --method CPGAE
 python main.py --method VRDAG
 python main.py --method TGAE
+python main.py --method CPGAE
 python main.py --method GraphRNN
 python main.py --method GraphRNN-S
 ```
@@ -60,7 +59,7 @@ $d_{mean}$: mean degree.
 
 
 
-The following **temporal network datasets** are from [linqs](https://linqs.org/datasets/) and [Network Repository](https://networkrepository.com/). For more information, please refer to the [VRDAG paper](https://arxiv.org/abs/2412.08810).
+The following **temporal network datasets** are from [snap](https://snap.stanford.edu/data/) and [Network Repository](https://networkrepository.com/). For more information, please refer to the [VRDAG paper](https://arxiv.org/abs/2412.08810).
 
 | Data          | #Nodes | #Edges  | T    |
 | ------------- | ------ | ------- | ---- |
@@ -109,15 +108,6 @@ dgl             2.4.0+cu121
 If you find *GraphGenerator* is useful for your research, please consider citing the following papers:
 
 ```bibtex
-@inproceedings{xiang2022efficient,
-  title={Efficient learning-based community-preserving graph generation},
-  author={Xiang, Sheng and Cheng, Dawei and Zhang, Jianfu and Ma, Zhenwei and Wang, Xiaoyang and Zhang, Ying},
-  booktitle={2022 IEEE 38th International Conference on Data Engineering (ICDE)},
-  pages={1982--1994},
-  year={2022},
-  organization={IEEE}
-}
-
 @inproceedings{li2025efficient,
   title={Efficient Dynamic Attributed Graph Generation},
   author={Li, Fan and Wang, Xiaoyang and Cheng, Dawei and Chen, Cong and Zhang, Ying and Lin, Xuemin},
@@ -131,6 +121,15 @@ If you find *GraphGenerator* is useful for your research, please consider citing
   author={Xiang, Sheng and Xu, Chenhao and  Cheng, Dawei and Wang, Xiaoyang and Zhang, Ying},
   booktitle={2025 IEEE 41th International Conference on Data Engineering (ICDE)},
   year={2025},
+  organization={IEEE}
+}
+
+@inproceedings{xiang2022efficient,
+  title={Efficient learning-based community-preserving graph generation},
+  author={Xiang, Sheng and Cheng, Dawei and Zhang, Jianfu and Ma, Zhenwei and Wang, Xiaoyang and Zhang, Ying},
+  booktitle={2022 IEEE 38th International Conference on Data Engineering (ICDE)},
+  pages={1982--1994},
+  year={2022},
   organization={IEEE}
 }
 ```
