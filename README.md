@@ -32,7 +32,21 @@ python main.py --method GraphRNN
 python main.py --method GraphRNN-S
 ```
 
-Configuration files can be found in `config/`.
+All predefined configurations are in `config/`. Dynamically override parameters using:
+
+```bash
+python train.py --method <name> --update <key1>=<value1> <key2>=<value2> ...
+```
+
+Key values shall exactly match (case-sensitive) the corresponding parameters defined in configuration files.
+
+Examples:
+
+```bash
+python main.py --method BTGAE --update data=cora epochs=150 learning_rate=3e-3
+
+python main.py --method TGAE --update epochs=100 lr=1e-3
+```
 
 ### Evalutaion
 

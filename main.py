@@ -19,7 +19,9 @@ def parse_args():
     parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter,
                             conflict_handler='resolve')
     parser.add_argument("--method", default=str)  # specify which method to use
-    method = vars(parser.parse_args())['method']  # dict
+    parser.add_argument('--update', nargs="*", help='# usage: --update <key1>=<value1> <key2>=<value2> ...')
+    cmd_args = parser.parse_args()
+    method = cmd_args.method
 
     if method == 'GraphRNN' or method == 'GraphRNN-S':
         yaml_file = "config/GraphRNN.yaml"
@@ -58,6 +60,11 @@ def parse_args():
         os.makedirs(args['graph_save_path'])
     
     args.update(config)
+    if cmd_args.update: # update config
+        for item in cmd_args.update:
+            key, value = item.split('=')
+            val_type = type(config[key])
+            args[key] = val_type(value)
     
     return args
 
