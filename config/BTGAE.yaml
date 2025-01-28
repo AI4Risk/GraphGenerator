@@ -1,10 +1,10 @@
 data: 'pubmed'
 
-epochs: 500
-learning_rate: 0.01
+epochs: 200
+learning_rate: 0.001
 
 device: 'cuda:0'
-seed: 123
+seed: 2025
 
 partition: 'metis' # metis, louvain, balanced_lpa, infomap
 sample_method: 'remove_isolated' # remove_isolated, extract_lcc
@@ -15,4 +15,4 @@ label_size: 32
 link_hidden_dim: 128
 
 resume: false
-epochs_save_ckpt: 20 # Save a checkpoint every N epochs
+epochs_save_ckpt: 50 # Save a checkpoint every N epochs

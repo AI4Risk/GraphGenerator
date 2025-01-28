@@ -10,7 +10,7 @@ from torch import optim
 from torch.optim.lr_scheduler import MultiStepLR
 import numpy as np
 import scipy.sparse as sp
-
+import pickle as pkl
 import json
 import time
 import sys
@@ -166,11 +166,30 @@ class Trainer:
             log(f'Resuming training from epoch {start_epoch}')
         else:
             start_epoch = 0
-            
+        
+        
         for epoch in range(start_epoch, epochs):
-            tot_loss_bipar = 0
+            tot_loss = 0
             cur_time = time.time()
-                             
+            
+            lamda = self.lambda_scheduler(epoch)
+            
+            loss_all_sub = 0
+            bi = []
+            
+            self.subOptimizer.zero_grad()
+            for optimizer in self.biOptimizers:
+                optimizer.zero_grad()
+            
+            for i in range(num_subgraphs):                
+                loss_i, gen_emb_i = self.submodel(self.subgraph_list[i], self.eigenvalues[i])
+                emb_i = gen_emb_i.detach()
+                emb_i.requires_grad = True
+                bi_i = self.BiGAES[i](self.subgraph_list_pyg[i], emb_i, lamda)
+                bi.append(bi_i)
+                
+                loss_all_sub += loss_i
+            
             for i in range(num_subgraphs - 1):
                 ilen = self.nodes_num[i]
                 col = row + ilen # start from the next column
@@ -179,37 +198,32 @@ class Trainer:
                     sub_ij = self.adj_permute[row:row+ilen, col:col+jlen]
                     # pad sub_ij to max_num_nodes*max_num_nodes with 0
                     target = pad_sparse_matrix_with_numpy(sub_ij, self.max_num_nodes)
-                    target = torch.tensor(target, dtype=torch.float)
+                    target = torch.tensor(target, dtype=torch.float).to(self.args['device'])
                     
-                    self.subOptimizer.zero_grad()
-                    self.biOptimizers[i].zero_grad()
-                    self.biOptimizers[j].zero_grad()
+                    output = torch.matmul(bi[i],bi[j].t())
                     
-                    loss_i, gen_emb_i = self.submodel(self.subgraph_list[i], self.eigenvalues[i])
-                    loss_j, gen_emb_j = self.submodel(self.subgraph_list[j], self.eigenvalues[j])
-                    
-                    lamda = self.lambda_scheduler(epoch)
-                    bi_i = self.BiGAES[i](self.subgraph_list_pyg[i], gen_emb_i, lamda)
-                    bi_j = self.BiGAES[j](self.subgraph_list_pyg[j], gen_emb_j, lamda)
-                    
-                    output = torch.matmul(bi_i,bi_j.t())
-                    
-                    target = target.to(self.args['device'])
-   
                     loss_ij = self.loss_fn(output, target)
-
-                    loss_ij = loss_ij + loss_i + loss_j #TODO 修改数量级
-                    loss_ij.backward()
-
-                    self.subOptimizer.step()
-                    self.biOptimizers[i].step()
-                    self.biOptimizers[j].step()
+                    loss_ij.backward(retain_graph=True)
                     
-                    tot_loss_bipar += loss_ij.item()
+                    tot_loss += loss_ij.item()
+                    
                     col += jlen # move to the next column
                 row += ilen # move to the next row
             
-            log(f'Epoch {epoch+1}, Loss: {tot_loss_bipar / (num_subgraphs*(num_subgraphs-1))}, Time: {time.time() - cur_time:.1f}s')
+            loss_all_sub.backward()
+            
+            
+            self.subOptimizer.step()
+            for optimizer in self.biOptimizers:
+                optimizer.step()
+            
+            tot_loss = tot_loss * 2 / (num_subgraphs*(num_subgraphs-1)) + loss_all_sub.item() / num_subgraphs
+            
+            # Delete the variables to free up memory
+            del bi, loss_all_sub, loss_ij, output, target
+            torch.cuda.empty_cache()
+            
+            log(f'Epoch {epoch+1}, Loss: {tot_loss}, Time: {time.time() - cur_time:.1f}s')
             
             # save checkpoint
             if (epoch+1) % self.args['epochs_save_ckpt'] == 0:
@@ -267,6 +281,22 @@ class Trainer:
         self.load_model(num_sub_graphs)
         log("preparing data...")
         self.prepare_data(subgraphs)
+        
+        partioned_result = {
+            "subgraphs": subgraphs,
+            "adj_permute": self.adj_permute,
+            "super_adj": super_adj,
+            "eigenvalues": self.eigenvalues,
+            "cutting_num": cutting_num,
+            "max_num_nodes": self.max_num_nodes,
+            "num_sub_graphs": num_sub_graphs,
+            "N" : self.N
+        }
+        
+        with open(path.join(self.args['graph_save_path'], 'partioned_result.pkl'), 'wb') as f:
+            pkl.dump(partioned_result, f)
+        log("partioned_result saved")
+            
         log("start training")
         log("===============================================================")
         
@@ -314,16 +344,10 @@ class Trainer:
         log("===============================================================")
         log("start eval")
         
-        log("target graph:")
-        stat_target = compute_statistics(target)
-        log(json.dumps(stat_target, indent=4))
-        
         log("pred graph:")
         stat_pred = compute_statistics(pred)
         log(json.dumps(stat_pred, indent=4))
         
-        for key in stat_target.keys():
-            log('{}: {}'.format(key, abs(stat_target[key] - stat_pred[key])))
         
         logPeakGPUMem(self.args['device'])
         

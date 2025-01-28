@@ -136,9 +136,9 @@ def compute_eigen_csr(A_csr, k):
         print("ARPACK did not converge! Returning the eigenvalues/eigenvectors that did converge.")
         eigenvalues, eigenvectors = e.eigenvalues, e.eigenvectors
 
-
-    if tk < k:
-        eigenvalues = np.pad(eigenvalues, (0, k - tk), mode='constant', constant_values=0)
-        eigenvectors = np.pad(eigenvectors, ((0, 0), (0, k - tk)), mode='constant', constant_values=0)
+    dim = eigenvalues.shape[0]
+    if dim < k:
+        eigenvalues = np.pad(eigenvalues, (0, k - dim), mode='constant', constant_values=0)
+        eigenvectors = np.pad(eigenvectors, ((0, 0), (0, k - dim)), mode='constant', constant_values=0)
 
     return eigenvalues

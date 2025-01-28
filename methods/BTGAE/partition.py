@@ -146,16 +146,23 @@ class GraphPartitioner:
 
         return subgraph_list,communities_list 
     
-    def _metis_partition(self, num_partitions=20):
+    def _metis_partition(self):
         """
         Partition a graph using METIS.
         """
         N = self.graph.shape[0]
-        # num_partitions = max(num_partitions, int(np.cbrt(N))+1)
+        
+        min_partitions=50
+        max_partitions=300
+        block_size = 1300
+        num_partitions = max(min_partitions, N//block_size)
+        num_partitions = min(max_partitions, num_partitions)
+        
+        
         G = nx.from_scipy_sparse_array(self.graph)
         xadj = self.graph.indptr
         adjncy = self.graph.indices
-        num_partitions = max(num_partitions, N//1000)
+        
         # Use pymetis to partition the graph
         _, parts = pymetis.part_graph(num_partitions, xadj=xadj.tolist(), adjncy=adjncy.tolist())
             # Create subgraphs based on METIS partitioning
