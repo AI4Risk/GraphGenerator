@@ -16,6 +16,7 @@ from .TGAE import ScalableTGAE
 sys.path.append(path.join(path.dirname(__file__), '..', '..', 'experiment'))
 from .utils import *
 from graph_metrics import compute_statistics, CompEvaluator
+import pandas as pd
 
 def compute_temporal_graph_statistics(A_T):
     seq_len = A_T.shape[0]//A_T.shape[1]
@@ -143,7 +144,9 @@ def main_TGAE(graph_seq, args):
                     best_f_med[key] = f_med[key]
             log('='*80 + '\n\n')
     log("Finished training.")
-    for key in best_f_avg.keys():
-        log("Best f_avg({}): {:.6f}".format(key, best_f_avg[key]))
-        log("Best f_med({}): {:.6f}".format(key, best_f_med[key]))
+    
+    df_avg = pd.DataFrame([best_f_avg])
+    df_med = pd.DataFrame([best_f_med])
+    log("Best f_avg:\n" + df_avg.to_csv(sep='\t', index=False, float_format='%.4f'))
+    log("Best f_med:\n" + df_med.to_csv(sep='\t', index=False, float_format='%.4f'))
             

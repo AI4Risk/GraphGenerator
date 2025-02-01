@@ -11,6 +11,7 @@ from torch.optim.lr_scheduler import MultiStepLR
 import numpy as np
 import scipy.sparse as sp
 import pickle as pkl
+import pandas as pd
 import json
 import time
 import sys
@@ -350,10 +351,15 @@ class Trainer:
         
         evaluator = CompEvaluator()
         res_mean = evaluator.comp_graph_stats(target, pred)
-        log("res_mean:" + json.dumps(res_mean, indent=4))
+        # log("res_mean:" + json.dumps(res_mean, indent=4))
+        df_avg = pd.DataFrame([res_mean])
+        log("f_avg:\n" + df_avg.to_csv(sep='\t', index=False, float_format='%.4f'))
+        
         
         res_med = evaluator.comp_graph_stats(target, pred, eval_method='med')
-        log("res_med:" + json.dumps(res_med, indent=4))
+        # log("res_med:" + json.dumps(res_med, indent=4))
+        df_med = pd.DataFrame([res_med])
+        log("f_med:\n" + df_med.to_csv(sep='\t', index=False, float_format='%.4f'))
         
         logPeakGPUMem(self.args['device'])
         

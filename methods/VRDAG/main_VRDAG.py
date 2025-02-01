@@ -9,6 +9,7 @@ from os import path
 from tensorboardX import SummaryWriter
 import warnings
 warnings.filterwarnings('ignore')
+import pandas as pd
 
 from .var_dist import *
 from .generator import VRDAG
@@ -185,12 +186,10 @@ def main_VRDAG(graph_seq, args):
                 
                 gc.collect()
     
-    log('Best Mean Results:')
-    for key in best_mean_res.keys():
-        log("f_avg({}): {:.4f}".format(key, best_mean_res[key]))
-    log('Best Median Results:')
-    for key in best_med_res.keys():
-        log("f_med({}): {:.4f}".format(key, best_med_res[key]))
+    df_avg = pd.DataFrame([best_mean_res])
+    df_med = pd.DataFrame([best_med_res])
+    log("Best f_avg:\n" + df_avg.to_csv(sep='\t', index=False, float_format='%.4f'))
+    log("Best f_med:\n" + df_med.to_csv(sep='\t', index=False, float_format='%.4f'))
     
     save_checkpoint(model, optimizer, args['num_epoch'] - 1, args['checkpoint_path'])
     log('Model Saved!')

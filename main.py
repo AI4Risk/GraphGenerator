@@ -39,6 +39,12 @@ def parse_args():
     with open(yaml_file) as file:
         config = yaml.safe_load(file)
     
+    if cmd_args.update: # update config
+        for item in cmd_args.update:
+            key, value = item.split('=')
+            val_type = type(config[key])
+            config[key] = val_type(value)
+
     config['data'] = case_insensitive(config['data'])
     data = config['data']
     
@@ -60,11 +66,6 @@ def parse_args():
         os.makedirs(args['graph_save_path'])
     
     args.update(config)
-    if cmd_args.update: # update config
-        for item in cmd_args.update:
-            key, value = item.split('=')
-            val_type = type(config[key])
-            args[key] = val_type(value)
     
     return args
 

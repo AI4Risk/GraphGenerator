@@ -7,6 +7,7 @@ import scipy.sparse as sp
 import networkx as nx
 from tqdm import tqdm
 from os import path
+import pandas as pd
 from .models import *
 from .utils import *
 
@@ -182,8 +183,12 @@ def main_CPGAE(A, args):
     
     evaluator = CompEvaluator()
     res_mean = evaluator.comp_graph_stats(A, gen_mat)
-    log("res_mean:" + json.dumps(res_mean, indent=4))
+    # log("res_mean:" + json.dumps(res_mean, indent=4))
+    df_avg = pd.DataFrame([res_mean])
+    log("f_avg:\n" + df_avg.to_csv(sep='\t', index=False, float_format='%.4f'))
     
     res_med = evaluator.comp_graph_stats(A, gen_mat, eval_method='med')
-    log("res_med:" + json.dumps(res_med, indent=4))
+    # log("res_med:" + json.dumps(res_med, indent=4))
+    df_med = pd.DataFrame([res_med])
+    log("f_med:\n" + df_med.to_csv(sep='\t', index=False, float_format='%.4f'))
     
