@@ -1,18 +1,22 @@
-data: 'pubmed'
+data: 'pubmed' # cora, citeseer, pubmed, epinions, yelpchi
 
-epochs: 200
-learning_rate: 0.001
+epochs: 500
+learning_rate: 0.005
+weight_decay: !!float 1e-4
+min_lr_ratio: 50 # eta_min = learning_rate / min_lr_ratio
 
 device: 'cuda:0'
 seed: 2025
 
 partition: 'metis' # metis, louvain, balanced_lpa, infomap
-sample_method: 'remove_isolated' # remove_isolated, extract_lcc
+prune_method: 'no_prune' # remove_isolated, extract_lcc, no_prune
 recon_method: 'synth' # synth, cellsbm, random
-hidden_dim: 64
-latent_dim: 64
+hidden_dim: 128
+latent_dim: 128
 label_size: 32
 link_hidden_dim: 128
 
 resume: false
 epochs_save_ckpt: 50 # Save a checkpoint every N epochs
+epochs_eval: 50
+need_statistics: true

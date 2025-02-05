@@ -134,19 +134,24 @@ def main_TGAE(graph_seq, args):
             A_seq = [adj[i*num_nodes:(i+1)*num_nodes, :] for i in range(seq_len)]
             A_gen_seq = [gen_mat[i*num_nodes:(i+1)*num_nodes, :] for i in range(seq_len)]
             f_avg = evaluator.comp_graph_stats(A_seq, A_gen_seq)
-            f_med = evaluator.comp_graph_stats(A_seq, A_gen_seq, eval_method='med')
+            # f_med = evaluator.comp_graph_stats(A_seq, A_gen_seq, eval_method='med')
             for key in f_avg.keys():
                 log("f_avg({}): {:.6f}".format(key, f_avg[key]))
-                log("f_med({}): {:.6f}".format(key, f_med[key]))
+                # log("f_med({}): {:.6f}".format(key, f_med[key]))
                 if key not in best_f_avg or f_avg[key] < best_f_avg[key]:
                     best_f_avg[key] = f_avg[key]
-                if key not in best_f_med or f_med[key] < best_f_med[key]:
-                    best_f_med[key] = f_med[key]
+                # if key not in best_f_med or f_med[key] < best_f_med[key]:
+                #     best_f_med[key] = f_med[key]
             log('='*80 + '\n\n')
+            
+            if eo > args['eo_limit']:
+                log("!!! Early Stopping after {} Epochs of EO Exceeding {} !!!".format(epoch, args['eo_limit']))
+                break
+            
     log("Finished training.")
     
     df_avg = pd.DataFrame([best_f_avg])
-    df_med = pd.DataFrame([best_f_med])
+    # df_med = pd.DataFrame([best_f_med])
     log("Best f_avg:\n" + df_avg.to_csv(sep='\t', index=False, float_format='%.4f'))
-    log("Best f_med:\n" + df_med.to_csv(sep='\t', index=False, float_format='%.4f'))
+    # log("Best f_med:\n" + df_med.to_csv(sep='\t', index=False, float_format='%.4f'))
             

@@ -5,7 +5,6 @@ import json
 import numpy as np
 import scipy.sparse as sp
 import networkx as nx
-from tqdm import tqdm
 from os import path
 import pandas as pd
 from .models import *
@@ -20,8 +19,6 @@ sys.path.append(path.join(path.dirname(__file__), '..', '..', 'experiment'))
 from graph_metrics import compute_statistics, CompEvaluator
 
 def main_CPGAE(A, args):
-    stat = compute_statistics(A)
-    log('\ndataset statistics: ' + json.dumps(stat, indent=4))
     random_seed(args['seed']) # set random seed
     
     ########## process raw graph ##########
@@ -86,7 +83,7 @@ def main_CPGAE(A, args):
     total_train_time = 0
     ########## training loop ##########
     
-    for epoch in tqdm(range(epoch_begin+1, args['epochs']+1)):
+    for epoch in range(epoch_begin+1, args['epochs']+1):
         num_edges_all = 0
         num_loss_all = 0
         encoder.train()
@@ -125,9 +122,9 @@ def main_CPGAE(A, args):
             # time consumption
             train_time += time.time() - train_start_time
             total_train_time += time.time() - train_start_time
-            
+        log("Epoch: {}, Overall Loss: {:.5f}, Training Time: {}s".format(epoch, num_loss_all/num_edges_all, train_time))
         ########## generate ##########
-        if (epoch) % 5 == 0:
+        if (epoch) % args['eval_per_epochs'] == 0:
             gen_mat = sp.lil_matrix(A.shape)
             encoder.eval()
             comm_decoder.eval()
@@ -145,7 +142,7 @@ def main_CPGAE(A, args):
                     gen_time += time.time() - gen_start_time
             
             eo = edge_overlap(A, gen_mat.tocsr())
-            log("Epoch: {}, Overall Loss: {:.5f}, Training Time: {}s".format(epoch, num_loss_all/num_edges_all, train_time))
+            
             log("Edge Overlap: {:.5f}, Total Time: {}s, Generation Time: {}s, Total Time Consumption: {}s"
                 .format(eo, int(time.time() - start_time), gen_time, total_train_time))
             if eo > max_eo:
@@ -156,13 +153,14 @@ def main_CPGAE(A, args):
                 fname = path.join(args['graph_save_path'], '{}_edge_overlap{:.4f}.npz'.format(args['method'], eo))
                 sp.save_npz(fname, gen_mat.tocsr())
                 if eo > args['eo_limit']:
+                    log("!!! Early Stopping after {} Epochs of EO Exceeding {} !!!".format(epoch, args['eo_limit']))
                     break
             elif epoch >= max_ep + args['ep_limit']:
                 log("!!! Early Stopping after {} Epochs of EO Non-Ascending !!!".format(args['ep_limit']))
                 break
         
         ########## save checkpoint ##########
-        if (epoch) % 50 == 0:
+        if (epoch) % 20 == 0:
             checkpoint = {
                 'encoder': encoder.state_dict(),
                 'comm_decoder': comm_decoder.state_dict(),
@@ -177,18 +175,23 @@ def main_CPGAE(A, args):
         
     logPeakGPUMem(args['device'])
     
-    gen_mat = sp.load_npz(fname)
-    stat = compute_statistics(gen_mat)
-    log('eval statistics: ' + json.dumps(stat, indent=4))
+    # release memory
+    del encoder, comm_decoder, decoder, enc_opt, comm_dec_opt, dec_opt
+    torch.cuda.empty_cache()
     
+    ########## evaluation ##########
+    log('start evaluation...')
     evaluator = CompEvaluator()
     res_mean = evaluator.comp_graph_stats(A, gen_mat)
-    # log("res_mean:" + json.dumps(res_mean, indent=4))
     df_avg = pd.DataFrame([res_mean])
+    log('finished evaluation...')
     log("f_avg:\n" + df_avg.to_csv(sep='\t', index=False, float_format='%.4f'))
     
-    res_med = evaluator.comp_graph_stats(A, gen_mat, eval_method='med')
-    # log("res_med:" + json.dumps(res_med, indent=4))
-    df_med = pd.DataFrame([res_med])
-    log("f_med:\n" + df_med.to_csv(sep='\t', index=False, float_format='%.4f'))
+    # res_med = evaluator.comp_graph_stats(A, gen_mat, eval_method='med')
+    # df_med = pd.DataFrame([res_med])
+    # log("f_med:\n" + df_med.to_csv(sep='\t', index=False, float_format='%.4f'))
+    
+    # gen_mat = sp.load_npz(fname)
+    # stat = compute_statistics(gen_mat)
+    # log('eval statistics: ' + json.dumps(stat, indent=4))
     

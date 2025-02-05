@@ -43,6 +43,8 @@ def parse_args():
         for item in cmd_args.update:
             key, value = item.split('=')
             val_type = type(config[key])
+            if val_type == bool:
+                value = True if value.lower() in ['y', 'yes', 'true'] else False
             config[key] = val_type(value)
 
     config['data'] = case_insensitive(config['data'])
@@ -73,7 +75,7 @@ def parse_args():
 def main(args):
     # set up logging
     log_folder()
-    log_name = logging_conf(args['method'])
+    log_name = logging_conf(args['method'], args['data'])
     args['log_name'] = log_name
     formatted_args = json.dumps(args, indent=4)
     log(f"Settings: {formatted_args}")
@@ -112,8 +114,8 @@ def log_folder():
         os.makedirs(log_folder_name)
         print(f"folder '{log_folder_name}' is created.")
 
-def logging_conf(method):
-    log_name = method + '-' + datetime.now().strftime("%m-%d %H:%M")
+def logging_conf(method, data):
+    log_name = method + '-' + data + '-' + datetime.now().strftime("%m-%d %H:%M")
     log_file = os.path.join('log/', log_name + '.log')
     logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s %(levelname)s:%(message)s',

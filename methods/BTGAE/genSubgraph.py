@@ -2,66 +2,82 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.nn.init as init
-from torch_geometric.nn import GCNConv,global_mean_pool
+from torch_geometric.nn import GCNConv, global_mean_pool, GATv2Conv
 from scipy.sparse import csr_matrix ,lil_matrix
-import networkx as nx
+
 
 ########## submodules for  CGraphVAE ##########
-class MLP_VAE_plain(nn.Module):
-    def __init__(self, h_size,label_size, embedding_size, y_size,device,debug = False):
-        super(MLP_VAE_plain, self).__init__()
+class MLP_VAE(nn.Module):
+    def __init__(self, hidden_dim, embedding_size, y_size, device, debug=False):
+        super(MLP_VAE, self).__init__()
         self.device = device
         self.debug = debug
-        self.encode_11 = nn.Sequential(
-            nn.Linear(h_size+label_size, embedding_size),
-            nn.LayerNorm(embedding_size)  # Apply LayerNorm after the linear layer
+
+        # Encoder: Shared feature extraction
+        self.shared_encoder = nn.Sequential(
+            nn.Linear(hidden_dim*2, embedding_size),
+            nn.LeakyReLU(),
+            nn.Linear(embedding_size, embedding_size),
+            nn.LeakyReLU()
         )
-        self.encode_12 = nn.Sequential(
-            nn.Linear(h_size+label_size, embedding_size),
-            nn.LayerNorm(embedding_size)  # Apply LayerNorm after the linear layer
+
+        # Encoder heads: Separate layers for mu and logvar
+        self.encode_mu = nn.Linear(embedding_size, embedding_size)
+        self.encode_logvar = nn.Linear(embedding_size, embedding_size)
+
+        # Decoder
+        self.decoder = nn.Sequential(
+            nn.Linear(embedding_size + hidden_dim, embedding_size),
+            nn.LeakyReLU(),
+            nn.Linear(embedding_size, y_size)
         )
-        self.decode_1 = nn.Sequential(
-            nn.Linear(embedding_size+label_size, embedding_size+label_size),
-            nn.LayerNorm(embedding_size+label_size)
-        )
-        self.decode_2 = nn.Sequential(
-            nn.Linear(embedding_size+label_size, y_size), # make edge prediction (reconstruct)
-            nn.LayerNorm(y_size)
-        )
-        self.relu = nn.ReLU()
+
+        # 初始化权重
         for m in self.modules():
             if isinstance(m, nn.Linear):
-                m.weight.data = init.xavier_uniform_(m.weight.data, gain=nn.init.calculate_gain('relu'))
+                nn.init.kaiming_normal_(m.weight)
+                # nn.init.xavier_normal_(m.weight)
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
 
-    def forward(self, graph, condition):
-        cat_feat = torch.cat((graph, condition),1)
+    def forward(self, graph_emb, condition):    
+        # Concatenate input features
+        cat_feat = torch.cat((graph_emb, condition), dim=1)
 
-        # encode
-        z_mu = self.encode_11(cat_feat)
-        z_lsgms = self.encode_12(cat_feat)
-        z_sgm = z_lsgms.mul(0.5).exp_()
+        # Shared encoder
+        hidden = self.shared_encoder(cat_feat)
+        # Get mu and logvar
+        z_mu = self.encode_mu(hidden)
+        z_logvar = self.encode_logvar(hidden)
+        z_sgm = torch.exp(z_logvar * 0.5)
+           
+        # Reparameterization trick
+        eps = torch.randn_like(z_sgm).to(self.device)
+        z = eps * z_sgm + z_mu
 
-        # sample
-        eps = torch.randn(z_sgm.size()).to(self.device)
-        z = eps * z_sgm + z_mu # reparameterization trick
-        
-        cat_z = torch.cat((z, condition), 1)
-        # decode
-        y = self.decode_1(cat_z)
-        y = self.relu(y)
-        y = self.decode_2(y)
-        return y, z_mu, z_lsgms
-
+        # Decoder input
+        cat_z = torch.cat((z, condition), dim=1)
+        y = self.decoder(cat_z)
+            
+        return y, z_mu, z_logvar
+    
 class Projector(nn.Module):
     def __init__(self, N, H):
-        super(Projector, self).__init__()
-        self.linear = nn.Linear(N, H)  # Linear transformation for each row
+        super().__init__()
+        self.linear1 = nn.Linear(N, H)
+        self.linear2 = nn.Linear(H, H)
+        # 初始化
+        for m in self.modules():
+            if isinstance(m, nn.Linear):
+                nn.init.kaiming_normal_(m.weight)
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
 
     def forward(self, x):
-        # x is expected to be of shape (N, N)
-        output = self.linear(x)  # Apply linear layer to all rows at once
-        return output
-
+        x = F.leaky_relu(self.linear1(x))
+        x = F.leaky_relu(self.linear2(x) + x)
+        return x
+    
 class GraphEncoder4Subgraph(torch.nn.Module):
     # not used
     def __init__(self, in_channels, hidden_dim):
@@ -70,8 +86,8 @@ class GraphEncoder4Subgraph(torch.nn.Module):
         self.conv2 = GCNConv(hidden_dim, hidden_dim)
         
     def forward(self, x, edge_index, batch):
-        x = F.relu(self.conv1(x, edge_index))
-        x = self.conv2(x, edge_index)
+        x = F.leaky_relu(self.conv1(x, edge_index))
+        x = F.leaky_relu(self.conv2(x, edge_index) + x)
         x = global_mean_pool(x, batch)  # Aggregate node embeddings to graph embeddings
         return x
 
@@ -88,41 +104,50 @@ class CGraphVAE(nn.Module):
         # config
         self.device = device
         self.label_size = label_size 
+        self.hidden_dim = hidden_dim
         self.latent_dim = latent_dim    
         self.max_num_nodes = max_num_nodes
         output_dim = max_num_nodes * (max_num_nodes + 1) // 2 # The number of elements in an upper triangular matrix.
         
         # models
-        self.vae = MLP_VAE_plain(input_dim * input_dim,label_size, latent_dim, output_dim,device=self.device)
-        self.label_embedding = nn.Linear(label_size, label_size)
+        
+        self.vae = MLP_VAE(hidden_dim, latent_dim, output_dim,device=self.device)
+        
+        self.graph_encoder = GraphEncoder4Subgraph(input_dim, hidden_dim)
+        
+        self.label_embedding = nn.Linear(label_size, hidden_dim)
+        
         self.projector = Projector(max_num_nodes, link_hidden_dim)
 
         # activation fuctions
-        self.sigmoid = nn.Sigmoid()
+        self.f_act = nn.Softmax(dim=1)
+        # self.f_act = nn.Sigmoid()
+        # self.f_act = nn.ReLU()
         
-    def forward(self, adj, spectral):
-        graph_h = adj.view(-1, self.max_num_nodes * self.max_num_nodes)
+    def forward(self, adj, graph_pyg, spectral):
+        graph_emb = self.graph_encoder(graph_pyg.x, graph_pyg.edge_index, graph_pyg.batch)
+        
         spectral_embed = self.label_embedding(spectral)
+            
+        h_decode, z_mu, z_lsgms = self.vae(graph_emb, spectral_embed)
         
-        h_decode, z_mu, z_lsgms = self.vae(graph_h, spectral_embed)
-        
-        out = self.sigmoid(h_decode)
+        out = self.f_act(h_decode)
 
         adj_permuted = adj
-        adj_vectorized = adj_permuted[torch.triu(torch.ones(self.max_num_nodes,self.max_num_nodes) )== 1].squeeze_()
+        adj_vectorized = adj_permuted[torch.triu(torch.ones(self.max_num_nodes, self.max_num_nodes))== 1].squeeze_()
         adj_vectorized_var = adj_vectorized.to(self.device)
-  
         adj_recon_loss = self.adj_recon_loss(adj_vectorized_var, out[0])
-
+        
         loss_kl = -0.5 * torch.sum(1 + z_lsgms - z_mu.pow(2) - z_lsgms.exp())
         loss_kl /= self.max_num_nodes * self.max_num_nodes # normalize
-
+        
         loss = loss_kl + adj_recon_loss
         loss = loss * self.max_num_nodes
 
-        adj_out = self.recover_adj_lower(h_decode)
+        adj_out = self.recover_full_adj_from_lower(self.recover_adj_lower(h_decode))
+        adj_out = adj_out.detach()
+        adj_out.requires_grad = True
         gen_emb = self.projector(adj_out)
-
         return loss, gen_emb
 
     def adj_recon_loss(self, adj_truth, adj_pred):
@@ -131,7 +156,7 @@ class CGraphVAE(nn.Module):
     def recover_adj_lower(self, l):
         # NOTE: Assumes 1 per minibatch
         adj = torch.zeros(self.max_num_nodes, self.max_num_nodes).to(self.device)
-        # print(l.shape)
+        
         adj[torch.triu(torch.ones(self.max_num_nodes, self.max_num_nodes)) == 1] = l
         return adj
 
@@ -143,63 +168,27 @@ class CGraphVAE(nn.Module):
         z = torch.randn(num_samples, self.latent_dim).to(self.device)
         spectral_embed = self.label_embedding(spectral)
         cat_z = torch.cat((z, spectral_embed), 1)
-        y = self.vae.decode_1(cat_z)
-        y = self.vae.relu(y)
-        y = self.vae.decode_2(y)
-        out = self.sigmoid(y)
-        return out
+        y = self.vae.decoder(cat_z)
+        out = self.f_act(y)
+        adj_out = self.recover_full_adj_from_lower(self.recover_adj_lower(y))
+        gen_emb = self.projector(adj_out)
+        return out, gen_emb
 
 ########## Graph Sampler ##########
 class GraphSampler:
-    def __init__(self, method='remove_isolated',model = None):
+    def __init__(self, model = None):
         """
-        Initializes the GraphPruner with a specified method.
-
         Parameters:
         - method: str
             The method to use for cleaning the graphs. Options are 'remove_isolated' and 'extract_lcc'.
         """
-        self.method = method
         self.model = model
 
-    def prune(self, generated_graph):
-        """
-        Cleans the generated graphs based on the specified method.
-
-        Parameters:
-        - generated_graphs: List[csr_matrix]
-            A list of generated graph adjacency matrices in CSR format.
-
-        Returns:
-        - List[csr_matrix]
-            A list of cleaned adjacency matrices in CSR format.
-        """
-        if self.method == 'remove_isolated':
-            return self._remove_isolated_nodes(generated_graph)
-        elif self.method == 'extract_lcc':
-            return self._extract_lccs(generated_graph)
-        else:
-            raise ValueError("Unsupported cleaning method specified.")
-
-    def _remove_isolated_nodes(self, adj_matrix):
-        G = nx.from_scipy_sparse_array(adj_matrix)
-        isolated = list(nx.isolates(G))
-        G.remove_nodes_from(isolated)
-        cleaned_adj_matrix = nx.to_scipy_sparse_array(G, format='csr', dtype=int)
-        return cleaned_adj_matrix
-
-    def _extract_lccs(self, adj_matrix):
-        G = nx.from_scipy_sparse_array(adj_matrix)
-        largest_cc = max(nx.connected_components(G), key=len)
-        subgraph = G.subgraph(largest_cc).copy()
-        lcc_adj_matrix = nx.to_scipy_sparse_array(subgraph, format='csr', dtype=int)
-        return lcc_adj_matrix
-    
-    def generate_single_graphs(self, adj_input, spectral,max_num_node):
+    def generate_single_graph(self, adj_input, spectral,max_num_node):
         target_edges = int(adj_input.sum())//2
         node_num = adj_input.shape[0]
         with torch.no_grad():
-            out = self.model.sample(1,spectral)
+            out, gen_emb = self.model.sample(1,spectral)
             out = out.cpu()
             # Get the i-th sample's edge probabilities
             edge_probs = out[0]
@@ -232,65 +221,26 @@ class GraphSampler:
             triu_indices = torch.triu_indices(row=node_num, col=node_num, offset=0)
             adj_matrix[triu_indices[0], triu_indices[1]] = edge_binary
 
-            
             # Make the adjacency matrix symmetric to represent an undirected graph
             adj_matrix = adj_matrix + adj_matrix.t() - torch.diag(adj_matrix.diagonal())*2 # no self loops
             
             # Convert to csr_matrix and add to the list
             tmp_graph = csr_matrix(adj_matrix.numpy())
             
-            #! prune the graph
-            #! If we prune the isolated nodes, the nodes of pred will differ from the target.
-            #! When pruning isolated nodes, do not calculate edge overlap.
-            
-            # tmp_graph = self.prune(tmp_graph)
-            
-        return tmp_graph
+        return tmp_graph, gen_emb
 
     def sample(self, upper_bound, graphs_train,spectrals):
         self.model.eval()
         generated_graphs = []
+        gen_embs = []
         max_num_nodes = max([g.shape[0] for g in graphs_train])
         with torch.no_grad():
             for i in range(len(graphs_train)):
-                
-                tmp_graph = self.generate_single_graphs(graphs_train[i],spectrals[i],max_num_nodes) 
+                tmp_graph, gen_emb = self.generate_single_graph(graphs_train[i],spectrals[i],max_num_nodes) 
                 
                 generated_graphs.append(tmp_graph)
-                
+                gen_embs.append(gen_emb)
         self.model.train()
-        return generated_graphs       
+        return generated_graphs, gen_embs   
 
 
-def prune_and_pad_subgraphs_csr(subgraph_adj_list, t):
-    """
-    Prune and pad subgraphs represented as CSR adjacency matrices.
-
-    Parameters:
-    - subgraph_adj_list: List[csr_matrix]
-        A list of subgraph adjacency matrices in CSR format.
-    - t: int
-        The minimum number of nodes for a subgraph to be kept.
-
-    Returns:
-    - List[csr_matrix]
-        A list of pruned and padded CSR adjacency matrices.
-    """
-    # Filter out subgraphs with fewer than t nodes
-    filtered_adj_list = [adj for adj in subgraph_adj_list if adj.shape[0] >= t]
-    
-    # Find the maximum number of nodes among the remaining subgraphs
-    max_nodes = max(adj.shape[0] for adj in filtered_adj_list)
-    
-    # Pad subgraphs with fewer nodes than max_nodes
-    padded_adj_list = []
-    for adj in filtered_adj_list:
-        if adj.shape[0] < max_nodes:
-            # Convert to LIL format for easier manipulation
-            padded_adj = lil_matrix((max_nodes, max_nodes))
-            padded_adj[:adj.shape[0], :adj.shape[1]] = adj
-            padded_adj_list.append(padded_adj.tocsr())  # Convert back to CSR format
-        else:
-            padded_adj_list.append(adj)
-    
-    return padded_adj_list

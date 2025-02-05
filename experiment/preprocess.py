@@ -268,9 +268,9 @@ def preprocess_temporal_data(data_name):
             slice_links[slice_id] = nx.DiGraph()
             if slice_id > 0:
                 slice_links[slice_id].add_nodes_from(slice_links[slice_id-1].nodes(data=True))
-                if data_name != 'email': # other data is too large, so it's hard to handle edge addition and deletion
-                    slice_links[slice_id].add_edges_from(slice_links[slice_id-1].edges())
-                    links_groups[slice_id].extend(links_groups[slice_id-1])
+                # if data_name != 'email': # other data is too large, so it's hard to handle edge addition and deletion
+                #     slice_links[slice_id].add_edges_from(slice_links[slice_id-1].edges())
+                #     links_groups[slice_id].extend(links_groups[slice_id-1])
         slice_links[slice_id].add_edge(a,b)
         links_groups[slice_id].append([a,b,v])
         

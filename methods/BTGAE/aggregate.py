@@ -48,7 +48,7 @@ class GraphReconstructor:
 
         return big_graph.tocsr()
 
-    def sample(self, i,j,subgraph_i, subgraph_j,n,m):
+    def sample(self, i,j,subgraph_i, subgraph_j, gen_emb_i, gen_emb_j, lamda ,n,m):
         """
         Generate a new adjacency matrix for the given pair of subgraphs.
 
@@ -59,25 +59,29 @@ class GraphReconstructor:
         Returns:
         - scipy.sparse.csr_matrix: The predicted adjacency matrix for the pair of subgraphs.
         """
+        for biage in self.BiGAES:
+            biage.eval()
         
         with torch.no_grad():
-            z_i = self.BiGAES[i](subgraph_i)
-            z_j = self.BiGAES[j](subgraph_j)
+            z_i = self.BiGAES[i](subgraph_i, gen_emb_i, lamda)
+            z_j = self.BiGAES[j](subgraph_j, gen_emb_j, lamda)
+
             output = torch.mm(z_i,z_j.t())
             output = torch.sigmoid(output)
 
             output = output[:n, :m]
-            # print(output.shape,n,m)
+        
+        for biage in self.BiGAES:
+            biage.train()
         return output
 
-    def aggregate_subgraphs_synth(self, adj, subgraphs, max_num_nodes):    
+    def aggregate_subgraphs_synth(self, adj, subgraphs, org_subgraphs, gen_embs, lamda, max_num_nodes):    
         for biage in self.BiGAES:
             biage.eval()
         
         num_graphs = len(subgraphs)
         final_adj_blocks = [[None for _ in range(num_graphs)] for _ in range(num_graphs)]
-        subgraph_list = [csr_to_pyg_graph(subgraph, max_num_nodes) for subgraph in subgraphs]
-        numlist = [subgraph.shape[0] for subgraph in subgraphs]
+        
         row = 0
         for i in range(num_graphs):
             final_adj_blocks[i][i] = subgraphs[i]
@@ -85,20 +89,23 @@ class GraphReconstructor:
             num_i = subgraphs[i].shape[0]
             col = row+num_i
             for j in range(i+1,num_graphs):
-                prob = self.sample(i,j,subgraph_list[i],subgraph_list[j],numlist[i],numlist[j])
                 num_j = subgraphs[j].shape[0]
+                prob = self.sample(i,j,org_subgraphs[i],org_subgraphs[j], gen_embs[i], gen_embs[j], lamda, num_i, num_j)
+                
                 num_edges = int(adj[row:row+num_i, col:col+num_j].sum())
                 edge_probability = prob / prob.sum()
-                # print(num_edges)
+                
                 top = self.create_top_k_adjacency(num_i, num_j, num_edges, edge_probability)
-                # print(top)
-                # Assign the generated matrices to the appropriate blocks
-                # print(top.sum(),num_i,num_j,num_edges)
+                
                 final_adj_blocks[i][j] = top
                 final_adj_blocks[j][i] = top.transpose()
                 col += num_j
             row += num_i
         final_adj = sp.bmat(final_adj_blocks, format='csr')
+        
+        for biage in self.BiGAES:
+            biage.train()
+            
         return final_adj
     
     def aggregate_subgraphs_cellsbm(self, super_adj, subgraphs):
@@ -118,7 +125,6 @@ class GraphReconstructor:
                 num_i, num_j = subgraphs[i].shape[0], subgraphs[j].shape[0]
                 total_possible_connections = num_i * num_j
                 edge_probability = num_edges_ij / total_possible_connections
-
 
                 # Generate a random adjacency matrix for the connections between subgraphs i and j
                 top = self.create_top_k_adjacency(num_i, num_j, num_edges_ij, edge_probability)

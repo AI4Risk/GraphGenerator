@@ -1,14 +1,14 @@
 data: email # email, bitcoin, vote
 eps: !!float 1e-6
-num_epoch: 50
-learning_rate: !!float 6e-2
-weight_decay: !!float 1e-3
-eta_min: !!float 1e-4
-sample_interval: 10 # Sample the graph and evaluate its performance at each sample interval.
-save_model_interval: 5
+num_epoch: 100
+learning_rate: !!float 5e-3
+weight_decay: !!float 1e-4
+min_lr_ratio: 50 # eta_min = learning_rate / min_lr_ratio
+sample_interval: 20 # Sample the graph and evaluate its performance at each sample interval.
+save_model_interval: 10
 clip_norm: 10
 device: 'cuda:0'
-seed: 2023
+seed: 2025
 resume: False
 
 # model structure
@@ -38,11 +38,5 @@ attr_col: {'bitcoin': [0],
           'email':[0,1],
           'vote':[0],
           'loan': [0, 1]}
-verbose: False
-is_ratio: True
-mmd_beta: !!float 2.0
-eval_method: 'mean'
-num_bins: 50
-n_box: 5
-deg_sep: 2
 
+mmd_beta: !!float 2.0

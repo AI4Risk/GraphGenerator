@@ -1,9 +1,10 @@
-data: 'cora'
+data: 'cora' # cora, citeseer, pubmed, epinions, yelpchi
 hidden_dim: 256
-epochs: 500
+epochs: 200
 num_heads: 8 # heads of the GAT
 
-eo_limit: 0.99 # Edge overlap limit
+eval_per_epochs: 20
+eo_limit: 0.8 #!! important param, Edge overlap limit 
 ep_limit: 30 # Max epochs for eo ascending, then stop
 seed: 50 # Random seed
 

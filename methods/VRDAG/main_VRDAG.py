@@ -3,10 +3,8 @@ import torch.nn as nn
 import time
 from datetime import datetime
 import gc
-from tqdm import tqdm
 import os
 from os import path
-from tensorboardX import SummaryWriter
 import warnings
 warnings.filterwarnings('ignore')
 import pandas as pd
@@ -29,17 +27,13 @@ def main_VRDAG(graph_seq, args):
     args['max_num_nodes']=A_list[-1].shape[0]
     log('{} data loaded!'.format(args['data']))
     
-    log_dir = os.path.join('log/', args['log_name'])
-    if not os.path.exists(log_dir):
-        os.makedirs(log_dir)
-    writer = SummaryWriter(log_dir)
-
     # -----------------------------Training----------------------------
     model = VRDAG(args)
     # optimizer = torch.optim.Adam(model.parameters(), lr=args['learning_rate'])
     # scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[20,40,60], gamma=0.5)
-    optimizer = torch.optim.AdamW(model.parameters(), lr=args['learning_rate'], weight_decay=args['weight_decay'])
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args['num_epoch'], eta_min=args['eta_min'])
+    lr = args['learning_rate']
+    optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=args['weight_decay'])
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args['num_epoch'], eta_min= lr / args['min_lr_ratio'])
 
     judge_s = CompEvaluator(mmd_beta=args['mmd_beta'])
     A_src=[filtered_adj(A_list[j].numpy()) for j in range(args['seq_len'])]
@@ -55,7 +49,7 @@ def main_VRDAG(graph_seq, args):
     best_mean_res = {}
     best_med_res = {}
         
-    for n_epoch in tqdm(range(epoch_begin, args['num_epoch'])):
+    for n_epoch in range(epoch_begin, args['num_epoch']):
         if args['ini_method']=='zero':
             h=torch.zeros(args['max_num_nodes'],args['h_dim'],device=args['device'])
         elif args['ini_method']=='embed':
@@ -106,10 +100,6 @@ def main_VRDAG(graph_seq, args):
         log('Epoch-{}: Average Attribute Loss is {}'.format(n_epoch+1,avg_attr_loss/args['seq_len']))
         log('Epoch-{}: Average Structure Loss is {}'.format(n_epoch+1,avg_struc_loss/args['seq_len']))
         log('Epoch-{}: Average Latent distribution Loss is {}\n'.format(n_epoch+1,avg_kld_loss/args['seq_len']))
-        writer.add_scalar('train/attr_loss', avg_attr_loss/args['seq_len'], n_epoch)
-        writer.add_scalar('train/struc_loss', avg_struc_loss/args['seq_len'], n_epoch)
-        writer.add_scalar('train/kld_loss', avg_kld_loss/args['seq_len'], n_epoch)
-        writer.flush()
         
         time_start = time.time()
         gen_data=model._sampling(args['seq_len'])
@@ -141,7 +131,7 @@ def main_VRDAG(graph_seq, args):
                 save_gen_data(args['graph_save_path'], samples)
                 
                 mean_res = judge_s.comp_graph_stats(A_src,A_gen)
-                med_res = judge_s.comp_graph_stats(A_src,A_gen,eval_method='med')
+                # med_res = judge_s.comp_graph_stats(A_src,A_gen,eval_method='med')
                 
 
                 # attr_entrophy_js,attr_corr=evaluate_attr(src_attrs=X_src,
@@ -164,11 +154,11 @@ def main_VRDAG(graph_seq, args):
                 log('-------------Graph structure statistics are as follows-------------')
                 for key in mean_res.keys():
                     log("f_avg({}): {:.4f}".format(key, mean_res[key]))
-                    log("f_med({}): {:.4f}".format(key, med_res[key]))
+                    # log("f_med({}): {:.4f}".format(key, med_res[key]))
                     if key not in best_mean_res or mean_res[key] < best_mean_res[key]:
                         best_mean_res[key] = mean_res[key]
-                    if key not in best_med_res or med_res[key] < best_med_res[key]:
-                        best_med_res[key] = med_res[key]
+                    # if key not in best_med_res or med_res[key] < best_med_res[key]:
+                    #     best_med_res[key] = med_res[key]
                 # log('-------------------------------------------------------------------\n')
 
                 # log('-------------Node attributes evaluation are as follows-------------')
@@ -187,9 +177,9 @@ def main_VRDAG(graph_seq, args):
                 gc.collect()
     
     df_avg = pd.DataFrame([best_mean_res])
-    df_med = pd.DataFrame([best_med_res])
+    # df_med = pd.DataFrame([best_med_res])
     log("Best f_avg:\n" + df_avg.to_csv(sep='\t', index=False, float_format='%.4f'))
-    log("Best f_med:\n" + df_med.to_csv(sep='\t', index=False, float_format='%.4f'))
+    # log("Best f_med:\n" + df_med.to_csv(sep='\t', index=False, float_format='%.4f'))
     
     save_checkpoint(model, optimizer, args['num_epoch'] - 1, args['checkpoint_path'])
     log('Model Saved!')
