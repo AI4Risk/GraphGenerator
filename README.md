@@ -48,7 +48,7 @@ python main.py --method BTGAE --update data=cora epochs=150 learning_rate=3e-3
 python main.py --method TGAE --update epochs=100 lr=1e-3
 ```
 
-### Evalutaion
+### Evaluaion
 
 The evaluation tools are located in the `experiment/graph_metrics` directory. For usage instructions, see [README.md](https://github.com/AI4Risk/GraphGenerator/blob/main/experiment/graph_metrics/README.md).
 

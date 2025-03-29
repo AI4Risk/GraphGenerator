@@ -92,8 +92,8 @@ def main_TGAE(graph_seq, args):
         num_loss_all = 0
         model.train()
         for step, (input_nodes, seeds, blocks) in enumerate(train_dataloader):
-            batch_inputs, batch_labels = coo_to_csp(feat[input_nodes.cpu(), :].tocoo()).to(args["device"]), \
-                                         coo_to_csp(adj[seeds.cpu(), :].tocoo()).to_dense().to(args["device"])
+            batch_inputs, batch_labels = coo_to_csp(feat[input_nodes.cpu().numpy(), :].tocoo()).to(args["device"]), \
+                                         coo_to_csp(adj[seeds.cpu().numpy(), :].tocoo()).to_dense().to(args["device"])
             blocks = [block.to(args["device"]) for block in blocks]
             train_batch_logits = model(blocks, batch_inputs)
             num_edges = batch_labels.sum() / 2
@@ -113,11 +113,11 @@ def main_TGAE(graph_seq, args):
             model.eval()
             with torch.no_grad():
                 for step, (input_nodes, seeds, blocks) in enumerate(train_dataloader):
-                    test_inputs = coo_to_csp(feat[input_nodes.cpu(), :].tocoo()).to(args["device"])
+                    test_inputs = coo_to_csp(feat[input_nodes.cpu().numpy(), :].tocoo()).to(args["device"])
                     blocks = [block for block in blocks]
                     test_batch_logits = torch.softmax(model(blocks, test_inputs), dim=-1)
-                    num_edges = adj[seeds.cpu(), :].sum()
-                    gen_mat[seeds.cpu(), :] = edge_from_scores(test_batch_logits.cpu().numpy(), num_edges)
+                    num_edges = adj[seeds.cpu().numpy(), :].sum()
+                    gen_mat[seeds.cpu().numpy(), :] = edge_from_scores(test_batch_logits.cpu().numpy(), num_edges)
                     if (step+1) % 20 == 0:
                         log("Epoch: {:03d}, Generating Step: {:03d}".format(epoch+1, step+1))
                     
