@@ -164,17 +164,19 @@ If you find *GraphGenerator* is useful for your research, please consider citing
 
 ```bibtex
 @inproceedings{li2025efficient,
-  title={Efficient Dynamic Attributed Graph Generation},
+  title={Efficient dynamic attributed graph generation},
   author={Li, Fan and Wang, Xiaoyang and Cheng, Dawei and Chen, Cong and Zhang, Ying and Lin, Xuemin},
-  booktitle={2025 IEEE 41th International Conference on Data Engineering (ICDE)},
+  booktitle={2025 IEEE 41st International Conference on Data Engineering (ICDE)},
+  pages={1415--1428},
   year={2025},
   organization={IEEE}
 }
 
 @inproceedings{xiang2025efficient,
-  title={Efficient Learning-based Graph Simulation for Temporal Graphs},
-  author={Xiang, Sheng and Xu, Chenhao and  Cheng, Dawei and Wang, Xiaoyang and Zhang, Ying},
-  booktitle={2025 IEEE 41th International Conference on Data Engineering (ICDE)},
+  title={Efficient learning-based graph simulation for temporal graphs},
+  author={Xiang, Sheng and Xu, Chenhao and Cheng, Dawei and Wang, Xiaoyang and Zhang, Ying},
+  booktitle={2025 IEEE 41st International Conference on Data Engineering (ICDE)},
+  pages={251--264},
   year={2025},
   organization={IEEE}
 }
